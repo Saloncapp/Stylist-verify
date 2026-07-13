@@ -1,36 +1,95 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# StylistVerify
+
+A SaaS employment verification platform for the salon industry. Salon owners can register stylists, manage employment status, and verify stylist backgrounds before hiring.
+
+## Tech Stack
+
+- **Next.js 15** (App Router) with React 19
+- **TypeScript**
+- **Tailwind CSS 4** + **shadcn/ui**
+- **Framer Motion**
+- **MongoDB Atlas** + **Mongoose**
+- **Cloudinary** (image storage)
+- **JWT** session authentication
 
 ## Getting Started
 
-First, run the development server:
+### 1. Clone and install
+
+```bash
+npm install
+```
+
+### 2. Environment variables
+
+Copy `.env.example` to `.env.local` and fill in your values:
+
+```bash
+cp .env.example .env.local
+```
+
+| Variable | Description |
+|---|---|
+| `MONGODB_URI` | MongoDB Atlas connection string |
+| `JWT_SECRET` | Secret key for JWT sessions |
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name |
+| `CLOUDINARY_API_KEY` | Cloudinary API key |
+| `CLOUDINARY_API_SECRET` | Cloudinary API secret |
+| `NEXT_PUBLIC_APP_URL` | App URL (e.g. `http://localhost:3000`) |
+
+### 3. Run the development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Features
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Landing page** — Hero, benefits, how-it-works, FAQ
+- **Salon registration & login** — Email/password auth with JWT cookies
+- **Dashboard** — Stats for total, active, relieved, and absconded stylists
+- **Stylist management** — Add stylists with photo upload, update status with remarks
+- **Public verification** — Search by Aadhaar or mobile number across all salons
+- **Employment history** — Chronological records with salon name, status, dates, and remarks
+- **Dark mode** — Light and dark theme support
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+├── app/
+│   ├── api/           # REST API routes
+│   ├── dashboard/     # Protected salon owner pages
+│   ├── login/         # Auth pages
+│   ├── register/
+│   └── verify/        # Public verification page
+├── components/
+│   ├── auth/
+│   ├── dashboard/
+│   ├── landing/
+│   ├── layout/
+│   ├── ui/            # shadcn/ui components
+│   └── verify/
+├── lib/               # Utilities (db, auth, validations)
+├── models/            # Mongoose models
+└── types/             # Shared TypeScript types
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## API Routes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Method | Route | Description |
+|---|---|---|
+| POST | `/api/auth/register` | Register salon |
+| POST | `/api/auth/login` | Login |
+| POST | `/api/auth/logout` | Logout |
+| GET | `/api/auth/me` | Current session |
+| GET/POST | `/api/stylists` | List / create stylists |
+| GET/PATCH | `/api/stylists/[id]` | Get / update stylist |
+| POST | `/api/verify` | Public verification search |
+| POST | `/api/upload` | Cloudinary image upload |
 
-## Deploy on Vercel
+## Future Scope
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The architecture supports future expansion: stylist login, job marketplace, skill verification, certifications, ratings, and AI employment insights.
