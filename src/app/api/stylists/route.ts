@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { stylistSchema } from "@/lib/validations";
 import { jsonError, jsonSuccess, zodErrorResponse } from "@/lib/api";
+import { hashAadhaar, prepareAadhaarStorage } from "@/lib/aadhaar-crypto";
 import { formatStylist } from "@/lib/formatters";
 import Salon from "@/models/Salon";
 import Stylist from "@/models/Stylist";
@@ -67,9 +68,14 @@ export async function POST(request: NextRequest) {
       return jsonError("Salon not found", 404);
     }
 
+    const aadhaarHash = hashAadhaar(data.aadhaarNumber);
+
     const existingAtSalon = await Stylist.findOne({
-      aadhaarNumber: data.aadhaarNumber,
       salonId: salon._id,
+      $or: [
+        { aadhaarHash },
+        { aadhaarNumber: data.aadhaarNumber },
+      ],
     });
     if (existingAtSalon) {
       return jsonError(
@@ -77,6 +83,8 @@ export async function POST(request: NextRequest) {
         409
       );
     }
+
+    const { aadhaarEncrypted } = prepareAadhaarStorage(data.aadhaarNumber);
 
     const now = new Date();
     const historyEntry = {
@@ -97,7 +105,8 @@ export async function POST(request: NextRequest) {
       name: data.name,
       mobileNumber: data.mobileNumber,
       level: data.level,
-      aadhaarNumber: data.aadhaarNumber,
+      aadhaarHash,
+      aadhaarEncrypted,
       address: data.address,
       photoUrl: data.photoUrl,
       status: data.status,

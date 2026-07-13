@@ -29,6 +29,7 @@ export interface StylistRecord {
   mobileNumber: string;
   level: StylistLevel;
   aadhaarNumber: string;
+  aadhaarMasked: string;
   address: string;
   photoUrl: string;
   status: StylistStatus;
@@ -47,10 +48,10 @@ export interface VerificationEmploymentEntry extends EmploymentHistoryEntry {
 export interface VerifiedStylistResult {
   name: string;
   maskedMobile: string;
+  maskedAadhaar: string;
   level: StylistLevel;
   status: StylistStatus;
   photoUrl: string;
-  aadhaarNumber: string;
   employmentHistory: VerificationEmploymentEntry[];
 }
 

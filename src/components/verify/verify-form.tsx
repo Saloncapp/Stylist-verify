@@ -53,7 +53,7 @@ function StylistResultCard({ stylist }: { stylist: VerifiedStylistResult }) {
               </p>
               <p>
                 <span className="text-muted-foreground">Aadhaar:</span>{" "}
-                {stylist.aadhaarNumber.replace(/(\d{4})(?=\d)/g, "$1 ")}
+                {stylist.maskedAadhaar}
               </p>
               <p>
                 <span className="text-muted-foreground">Current Status:</span>{" "}
@@ -269,9 +269,9 @@ export function VerifyForm() {
             </Alert>
           )}
 
-          {result.stylists.map((stylist) => (
+          {result.stylists.map((stylist, index) => (
             <StylistResultCard
-              key={stylist.aadhaarNumber}
+              key={`${stylist.maskedAadhaar}-${index}`}
               stylist={stylist}
             />
           ))}

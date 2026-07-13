@@ -1,3 +1,8 @@
+import {
+  getAadhaarFromRecord,
+  getAadhaarGroupKey,
+  maskAadhaar,
+} from "@/lib/aadhaar-crypto";
 import { maskMobileNumber } from "@/lib/mask";
 import type { IStylist } from "@/models/Stylist";
 import type {
@@ -9,10 +14,10 @@ import type {
 export interface VerifiedStylist {
   name: string;
   maskedMobile: string;
+  maskedAadhaar: string;
   level: StylistLevel;
   status: StylistStatus;
   photoUrl: string;
-  aadhaarNumber: string;
   employmentHistory: VerificationEmploymentEntry[];
 }
 
@@ -56,9 +61,10 @@ export function groupRecordsByAadhaar(records: IStylist[]): IStylist[][] {
   const map = new Map<string, IStylist[]>();
 
   for (const record of records) {
-    const group = map.get(record.aadhaarNumber) ?? [];
+    const key = getAadhaarGroupKey(record);
+    const group = map.get(key) ?? [];
     group.push(record);
-    map.set(record.aadhaarNumber, group);
+    map.set(key, group);
   }
 
   return Array.from(map.values()).map((group) =>
@@ -88,13 +94,15 @@ export function buildVerifiedStylistFromRecords(
       ? `${uniqueNames[0]} (+${uniqueNames.length - 1} other name${uniqueNames.length > 2 ? "s" : ""})`
       : latest.name;
 
+  const aadhaarPlain = getAadhaarFromRecord(latest);
+
   return {
     name: displayName,
     maskedMobile: maskMobileNumber(latest.mobileNumber),
+    maskedAadhaar: maskAadhaar(aadhaarPlain),
     level: activeRecord.level,
     status: activeRecord.status,
     photoUrl: latest.photoUrl,
-    aadhaarNumber: latest.aadhaarNumber,
     employmentHistory: buildEmploymentHistory(sorted),
   };
 }

@@ -90,7 +90,7 @@ export function StylistDetail({ stylist }: { stylist: StylistRecord }) {
               </p>
               <p>
                 <span className="text-muted-foreground">Aadhaar:</span>{" "}
-                {stylist.aadhaarNumber.replace(/(\d{4})(?=\d)/g, "$1 ")}
+                {stylist.aadhaarMasked}
               </p>
               <p>
                 <span className="text-muted-foreground">Joined:</span>{" "}

@@ -18,7 +18,10 @@ export interface IStylist extends Document {
   name: string;
   mobileNumber: string;
   level: StylistLevel;
-  aadhaarNumber: string;
+  aadhaarHash: string;
+  aadhaarEncrypted: string;
+  /** @deprecated Legacy plain-text field — migrate to encrypted fields */
+  aadhaarNumber?: string;
   address: string;
   photoUrl: string;
   status: StylistStatus;
@@ -54,7 +57,9 @@ const StylistSchema = new Schema<IStylist>(
     name: { type: String, required: true, trim: true },
     mobileNumber: { type: String, required: true, index: true },
     level: { type: String, enum: ["L1", "L2", "L3", "L4"], required: true },
-    aadhaarNumber: { type: String, required: true, index: true },
+    aadhaarHash: { type: String, index: true },
+    aadhaarEncrypted: { type: String },
+    aadhaarNumber: { type: String }, // legacy plain-text, do not use for new records
     address: { type: String, required: true },
     photoUrl: { type: String, required: true },
     status: {
@@ -71,7 +76,7 @@ const StylistSchema = new Schema<IStylist>(
 );
 
 // Same person (Aadhaar) can work at multiple salons, but only once per salon
-StylistSchema.index({ aadhaarNumber: 1, salonId: 1 }, { unique: true });
+StylistSchema.index({ aadhaarHash: 1, salonId: 1 }, { unique: true });
 
 const Stylist: Model<IStylist> =
   mongoose.models.Stylist ?? mongoose.model<IStylist>("Stylist", StylistSchema);

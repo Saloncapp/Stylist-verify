@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/db";
 import { verifySchema } from "@/lib/validations";
+import { hashAadhaar } from "@/lib/aadhaar-crypto";
 import { jsonError, jsonSuccess, zodErrorResponse } from "@/lib/api";
 import {
   buildVerifiedStylistFromRecords,
@@ -21,9 +22,10 @@ export async function POST(request: NextRequest) {
 
     await connectDB();
 
-    const query: Record<string, string> = {};
+    const query: Record<string, unknown> = {};
     if (aadhaarNumber && /^\d{12}$/.test(aadhaarNumber)) {
-      query.aadhaarNumber = aadhaarNumber;
+      const aadhaarHash = hashAadhaar(aadhaarNumber);
+      query.$or = [{ aadhaarHash }, { aadhaarNumber }];
     } else if (mobileNumber && /^[6-9]\d{9}$/.test(mobileNumber)) {
       query.mobileNumber = mobileNumber;
     }

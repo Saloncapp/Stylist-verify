@@ -1,7 +1,10 @@
+import { getAadhaarFromRecord, maskAadhaar } from "@/lib/aadhaar-crypto";
 import type { IStylist } from "@/models/Stylist";
 import type { StylistRecord, EmploymentHistoryEntry } from "@/types";
 
 export function formatStylist(stylist: IStylist): StylistRecord {
+  const aadhaarNumber = getAadhaarFromRecord(stylist);
+
   return {
     id: stylist._id.toString(),
     salonId: stylist.salonId.toString(),
@@ -9,7 +12,8 @@ export function formatStylist(stylist: IStylist): StylistRecord {
     name: stylist.name,
     mobileNumber: stylist.mobileNumber,
     level: stylist.level,
-    aadhaarNumber: stylist.aadhaarNumber,
+    aadhaarNumber,
+    aadhaarMasked: maskAadhaar(aadhaarNumber),
     address: stylist.address,
     photoUrl: stylist.photoUrl,
     status: stylist.status,
