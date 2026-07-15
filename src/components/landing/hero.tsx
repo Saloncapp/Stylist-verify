@@ -39,7 +39,7 @@ export function HeroSection() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          StylistVerify helps salon owners make informed hiring decisions with
+          Salon Staff helps salon owners make informed hiring decisions with
           verified employment records — not blacklists, just transparent history.
         </motion.p>
 

@@ -22,7 +22,7 @@ function ensureCloudinaryConfig() {
 export async function uploadImage(
   file: Buffer,
   mimeType = "image/jpeg",
-  folder = "stylist-verify"
+  folder = "salon-staff"
 ): Promise<string> {
   ensureCloudinaryConfig();
 

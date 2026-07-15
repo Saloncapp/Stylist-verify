@@ -1,4 +1,4 @@
-# StylistVerify
+# Salon Staff
 
 A SaaS employment verification platform for the salon industry. Salon owners can register stylists, manage employment status, and verify stylist backgrounds before hiring.
 
