@@ -15,8 +15,15 @@ export async function POST(request: NextRequest) {
       return zodErrorResponse(parsed.error);
     }
 
-    const { salonName, ownerName, email, password, staffCount, location } =
-      parsed.data;
+    const {
+      salonName,
+      ownerName,
+      email,
+      password,
+      staffCount,
+      location,
+      salonNumber,
+    } = parsed.data;
 
     await connectDB();
 
@@ -32,8 +39,10 @@ export async function POST(request: NextRequest) {
       ownerName,
       email,
       password: hashedPassword,
+      authProvider: "email",
       staffCount,
       location,
+      salonNumber,
     });
 
     const token = await createSession({
@@ -52,6 +61,8 @@ export async function POST(request: NextRequest) {
           email: salon.email,
           staffCount: salon.staffCount,
           location: salon.location,
+          salonNumber: salon.salonNumber,
+          authProvider: salon.authProvider,
         },
       },
       201

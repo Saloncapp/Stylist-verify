@@ -64,6 +64,8 @@ export function toSalonUser(
     email: string;
     staffCount: number;
     location: string;
+    salonNumber?: string;
+    authProvider?: "email" | "google";
   }
 ): SalonUser {
   return {
@@ -73,5 +75,7 @@ export function toSalonUser(
     email: salon.email,
     staffCount: salon.staffCount,
     location: salon.location,
+    salonNumber: salon.salonNumber,
+    authProvider: salon.authProvider ?? "email",
   };
 }

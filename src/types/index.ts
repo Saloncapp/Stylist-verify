@@ -12,6 +12,8 @@ export interface EmploymentHistoryEntry {
   updatedAt: string;
 }
 
+export type AuthProvider = "email" | "google";
+
 export interface SalonUser {
   id: string;
   salonName: string;
@@ -19,6 +21,31 @@ export interface SalonUser {
   email: string;
   staffCount: number;
   location: string;
+  salonNumber?: string;
+  authProvider: AuthProvider;
+}
+
+export interface VerificationEmploymentPrivateEntry
+  extends EmploymentHistoryEntry {
+  stylistName: string;
+  mobileNumber: string;
+}
+
+export interface VerifiedStylistPrivateResult {
+  name: string;
+  mobileNumber: string;
+  aadhaarMasked: string;
+  address: string;
+  level: StylistLevel;
+  status: StylistStatus;
+  photoUrl: string;
+  employmentHistory: VerificationEmploymentPrivateEntry[];
+}
+
+export interface PrivateVerificationResult {
+  found: boolean;
+  stylists: VerifiedStylistPrivateResult[];
+  multiple?: boolean;
 }
 
 export interface StylistRecord {
@@ -57,6 +84,8 @@ export interface VerifiedStylistResult {
 
 export interface VerificationResult {
   found: boolean;
+  locked?: boolean;
+  count?: number;
   stylists: VerifiedStylistResult[];
   multiple?: boolean;
 }

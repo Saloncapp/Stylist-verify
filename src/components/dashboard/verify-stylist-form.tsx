@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
-import { Loader2, Lock, Search, Users } from "lucide-react";
+import { Loader2, Search, Users } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,69 +12,24 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { LinkButton } from "@/components/link-button";
 import { StatusBadge } from "@/components/status-badge";
 import { verifySchema, type VerifyInput } from "@/lib/validations";
 import { handleDigitInput } from "@/lib/digit-input";
-import type { VerifiedStylistResult } from "@/types";
+import type { VerifiedStylistPrivateResult } from "@/types";
 import { format } from "@/lib/date";
 import { toast } from "sonner";
 
-interface VerifyResult {
+interface PrivateVerifyResult {
   found: boolean;
-  locked?: boolean;
-  count?: number;
-  stylists: VerifiedStylistResult[];
+  stylists: VerifiedStylistPrivateResult[];
   multiple?: boolean;
 }
 
-function LockedRecordCard({ count, multiple }: { count: number; multiple?: boolean }) {
-  return (
-    <Card className="relative overflow-hidden shadow-sm">
-      <div
-        className="pointer-events-none select-none blur-md"
-        aria-hidden="true"
-      >
-        <CardContent className="flex flex-col items-center gap-6 p-6 sm:flex-row sm:items-start">
-          <div className="size-28 rounded-2xl bg-muted" />
-          <div className="flex-1 space-y-3 text-center sm:text-left">
-            <div className="h-7 w-48 rounded bg-muted" />
-            <div className="grid gap-2 sm:grid-cols-2">
-              <div className="h-4 w-40 rounded bg-muted" />
-              <div className="h-4 w-32 rounded bg-muted" />
-              <div className="h-4 w-36 rounded bg-muted" />
-              <div className="h-4 w-28 rounded bg-muted" />
-            </div>
-          </div>
-        </CardContent>
-      </div>
-
-      <div className="absolute inset-0 flex items-center justify-center bg-background/70 p-6 backdrop-blur-[2px]">
-        <div className="max-w-sm space-y-4 text-center">
-          <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <Lock className="size-5" />
-          </div>
-          <div className="space-y-2">
-            <h2 className="text-xl font-bold">Record found</h2>
-            <p className="text-sm text-muted-foreground">
-              {multiple
-                ? `${count} stylist records were found. Register your salon to view full employment details.`
-                : "A stylist record was found. Register your salon to view full details."}
-            </p>
-          </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
-            <LinkButton href="/register">Register Salon</LinkButton>
-            <LinkButton href="/login" variant="outline">
-              Login
-            </LinkButton>
-          </div>
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-function StylistResultCard({ stylist }: { stylist: VerifiedStylistResult }) {
+function PrivateStylistResultCard({
+  stylist,
+}: {
+  stylist: VerifiedStylistPrivateResult;
+}) {
   return (
     <div className="space-y-4">
       <Card className="shadow-sm">
@@ -95,20 +50,22 @@ function StylistResultCard({ stylist }: { stylist: VerifiedStylistResult }) {
             <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
               <p>
                 <span className="text-muted-foreground">Mobile:</span>{" "}
-                {stylist.maskedMobile}
+                {stylist.mobileNumber}
               </p>
               <p>
-                <span className="text-muted-foreground">Level:</span> {stylist.level}
+                <span className="text-muted-foreground">Level:</span>{" "}
+                {stylist.level}
               </p>
               <p>
                 <span className="text-muted-foreground">Aadhaar:</span>{" "}
-                {stylist.maskedAadhaar}
+                {stylist.aadhaarMasked}
               </p>
               <p>
                 <span className="text-muted-foreground">Current Status:</span>{" "}
                 {stylist.status}
               </p>
             </div>
+            <p className="mt-2 text-sm text-muted-foreground">{stylist.address}</p>
           </div>
         </CardContent>
       </Card>
@@ -135,7 +92,7 @@ function StylistResultCard({ stylist }: { stylist: VerifiedStylistResult }) {
                   </p>
                   <p>
                     <span className="text-muted-foreground">Mobile:</span>{" "}
-                    {entry.maskedMobile}
+                    {entry.mobileNumber}
                   </p>
                   <p>
                     <span className="text-muted-foreground">Level:</span>{" "}
@@ -167,8 +124,8 @@ function StylistResultCard({ stylist }: { stylist: VerifiedStylistResult }) {
   );
 }
 
-export function VerifyForm() {
-  const [result, setResult] = useState<VerifyResult | null>(null);
+export function VerifyStylistForm() {
+  const [result, setResult] = useState<PrivateVerifyResult | null>(null);
   const [searched, setSearched] = useState(false);
   const [searchType, setSearchType] = useState<"aadhaar" | "mobile">("aadhaar");
 
@@ -188,7 +145,7 @@ export function VerifyForm() {
           ? { aadhaarNumber: data.aadhaarNumber }
           : { mobileNumber: data.mobileNumber };
 
-      const res = await fetch("/api/verify", {
+      const res = await fetch("/api/verify/private", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -218,10 +175,10 @@ export function VerifyForm() {
   return (
     <div className="mx-auto max-w-2xl space-y-8">
       <Card className="shadow-sm">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Verify Stylist</CardTitle>
+        <CardHeader>
+          <CardTitle className="text-xl">Search Stylist Records</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Search by Aadhaar number or mobile number to view employment history
+            Enter Aadhaar or mobile number to view full stylist details
           </p>
         </CardHeader>
         <CardContent>
@@ -234,9 +191,9 @@ export function VerifyForm() {
             <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
               <TabsContent value="aadhaar" className="mt-0 space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="aadhaarNumber">Aadhaar Number</Label>
+                  <Label htmlFor="dashboard-aadhaarNumber">Aadhaar Number</Label>
                   <Input
-                    id="aadhaarNumber"
+                    id="dashboard-aadhaarNumber"
                     type="text"
                     inputMode="numeric"
                     autoComplete="off"
@@ -247,16 +204,18 @@ export function VerifyForm() {
                     })}
                   />
                   {errors.aadhaarNumber && (
-                    <p className="text-sm text-danger">{errors.aadhaarNumber.message}</p>
+                    <p className="text-sm text-danger">
+                      {errors.aadhaarNumber.message}
+                    </p>
                   )}
                 </div>
               </TabsContent>
 
               <TabsContent value="mobile" className="mt-0 space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="mobileNumber">Mobile Number</Label>
+                  <Label htmlFor="dashboard-mobileNumber">Mobile Number</Label>
                   <Input
-                    id="mobileNumber"
+                    id="dashboard-mobileNumber"
                     type="text"
                     inputMode="numeric"
                     autoComplete="off"
@@ -267,11 +226,13 @@ export function VerifyForm() {
                     })}
                   />
                   {errors.mobileNumber && (
-                    <p className="text-sm text-danger">{errors.mobileNumber.message}</p>
+                    <p className="text-sm text-danger">
+                      {errors.mobileNumber.message}
+                    </p>
                   )}
                   <p className="text-xs text-muted-foreground">
-                    Multiple stylists may share the same mobile number. All matching
-                    records will be shown.
+                    Multiple stylists may share the same mobile number. All
+                    matching records will be shown.
                   </p>
                 </div>
               </TabsContent>
@@ -282,7 +243,7 @@ export function VerifyForm() {
                 ) : (
                   <Search className="mr-2 size-4" />
                 )}
-                Search Records
+                Verify Stylist
               </Button>
             </form>
           </Tabs>
@@ -302,45 +263,30 @@ export function VerifyForm() {
         </motion.div>
       )}
 
-      {searched && result?.found && result.locked && (
+      {searched && result?.found && result.stylists.length > 0 && (
         <motion.div
+          className="space-y-8"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <LockedRecordCard
-            count={result.count ?? 1}
-            multiple={result.multiple}
-          />
+          {result.multiple && (
+            <Alert>
+              <Users className="size-4" />
+              <AlertDescription>
+                {result.stylists.length} stylists found with this mobile number.
+                Review each record below.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {result.stylists.map((stylist, index) => (
+            <PrivateStylistResultCard
+              key={`${stylist.aadhaarMasked}-${index}`}
+              stylist={stylist}
+            />
+          ))}
         </motion.div>
       )}
-
-      {searched &&
-        result?.found &&
-        !result.locked &&
-        result.stylists.length > 0 && (
-          <motion.div
-            className="space-y-8"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            {result.multiple && (
-              <Alert>
-                <Users className="size-4" />
-                <AlertDescription>
-                  {result.stylists.length} stylists found with this mobile number.
-                  Review each record below.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {result.stylists.map((stylist, index) => (
-              <StylistResultCard
-                key={`${stylist.maskedAadhaar}-${index}`}
-                stylist={stylist}
-              />
-            ))}
-          </motion.div>
-        )}
     </div>
   );
 }

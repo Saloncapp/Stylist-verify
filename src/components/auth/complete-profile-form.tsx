@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,39 +8,81 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PasswordInput } from "@/components/ui/password-input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { registerSchema, type RegisterInput } from "@/lib/validations";
+import {
+  completeProfileSchema,
+  type CompleteProfileInput,
+} from "@/lib/validations";
 import { handleDigitInput } from "@/lib/digit-input";
+import {
+  clearGooglePendingAuth,
+  getGooglePendingAuth,
+} from "@/components/auth/google-sign-in-button";
 import { toast } from "sonner";
 
-export function RegisterForm() {
+export function CompleteProfileForm() {
   const router = useRouter();
+  const [pending, setPending] = useState<ReturnType<typeof getGooglePendingAuth>>(null);
+  const [ready, setReady] = useState(false);
 
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors, isSubmitting },
-  } = useForm<RegisterInput>({
-    resolver: zodResolver(registerSchema),
+  } = useForm<CompleteProfileInput>({
+    resolver: zodResolver(completeProfileSchema),
   });
 
-  async function onSubmit(data: RegisterInput) {
+  useEffect(() => {
+    const auth = getGooglePendingAuth();
+    if (!auth) {
+      router.replace("/login");
+      return;
+    }
+
+    setPending(auth);
+    reset({
+      ownerName: auth.profile.ownerName,
+      salonName: "",
+      staffCount: 1,
+      location: "",
+      salonNumber: "",
+    });
+    setReady(true);
+  }, [reset, router]);
+
+  if (!ready || !pending) {
+    return null;
+  }
+
+  async function onSubmit(data: CompleteProfileInput) {
+    const auth = getGooglePendingAuth();
+    if (!auth) {
+      toast.error("Google session expired. Please sign in again.");
+      router.replace("/login");
+      return;
+    }
+
     try {
-      const res = await fetch("/api/auth/register", {
+      const res = await fetch("/api/auth/complete-profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          idToken: auth.idToken,
+        }),
       });
 
       const result = await res.json();
 
       if (!result.success) {
-        toast.error(result.message || "Registration failed");
+        toast.error(result.message || "Failed to complete registration");
         return;
       }
 
-      toast.success("Account created successfully!");
+      clearGooglePendingAuth();
+      toast.success("Salon profile created successfully!");
       router.push("/dashboard");
       router.refresh();
     } catch {
@@ -51,13 +93,27 @@ export function RegisterForm() {
   return (
     <Card className="w-full max-w-md shadow-sm">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl">Register Your Salon</CardTitle>
+        <CardTitle className="text-2xl">Complete Your Salon Profile</CardTitle>
         <CardDescription>
-          Create an account to start managing stylist records
+          Finish setting up your salon account to access the dashboard
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email">Email Address</Label>
+            <Input
+              id="email"
+              type="email"
+              value={pending.profile.email}
+              disabled
+              className="bg-muted"
+            />
+            <p className="text-xs text-muted-foreground">
+              This email is linked to your Google account
+            </p>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="salonName">Salon Name</Label>
             <Input id="salonName" placeholder="Your salon name" {...register("salonName")} />
@@ -71,19 +127,6 @@ export function RegisterForm() {
             <Input id="ownerName" placeholder="Full name" {...register("ownerName")} />
             {errors.ownerName && (
               <p className="text-sm text-danger">{errors.ownerName.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email">Email Address</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@salon.com"
-              {...register("email")}
-            />
-            {errors.email && (
-              <p className="text-sm text-danger">{errors.email.message}</p>
             )}
           </div>
 
@@ -102,18 +145,6 @@ export function RegisterForm() {
             />
             {errors.salonNumber && (
               <p className="text-sm text-danger">{errors.salonNumber.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <PasswordInput
-              id="password"
-              placeholder="Min 8 chars, 1 uppercase, 1 number"
-              {...register("password")}
-            />
-            {errors.password && (
-              <p className="text-sm text-danger">{errors.password.message}</p>
             )}
           </div>
 
@@ -143,16 +174,9 @@ export function RegisterForm() {
 
           <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting && <Loader2 className="mr-2 size-4 animate-spin" />}
-            Create Account
+            Complete Registration
           </Button>
         </form>
-
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          Already have an account?{" "}
-          <Link href="/login" className="font-medium text-primary hover:underline">
-            Sign in
-          </Link>
-        </p>
       </CardContent>
     </Card>
   );

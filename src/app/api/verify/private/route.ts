@@ -4,7 +4,7 @@ import { getSession } from "@/lib/auth";
 import { verifySchema } from "@/lib/validations";
 import { jsonError, jsonSuccess, zodErrorResponse } from "@/lib/api";
 import {
-  buildVerifiedStylistFromRecords,
+  buildPrivateVerifiedStylistFromRecords,
   buildVerifyQuery,
   groupRecordsByAadhaar,
 } from "@/lib/verify";
@@ -12,6 +12,11 @@ import Stylist from "@/models/Stylist";
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getSession();
+    if (!session) {
+      return jsonError("Not authenticated", 401);
+    }
+
     const body = await request.json();
     const parsed = verifySchema.safeParse(body);
 
@@ -33,29 +38,15 @@ export async function POST(request: NextRequest) {
     }
 
     const groups = groupRecordsByAadhaar(records);
-    const session = await getSession();
-
-    // Logged-out users only learn that a record exists — no PII in the response
-    if (!session) {
-      return jsonSuccess({
-        found: true,
-        locked: true,
-        count: groups.length,
-        multiple: groups.length > 1,
-        stylists: [],
-      });
-    }
-
-    const stylists = groups.map(buildVerifiedStylistFromRecords);
+    const stylists = groups.map(buildPrivateVerifiedStylistFromRecords);
 
     return jsonSuccess({
       found: true,
-      locked: false,
       stylists,
       multiple: stylists.length > 1,
     });
   } catch (error) {
-    console.error("Verify error:", error);
+    console.error("Private verify error:", error);
     return jsonError("Verification failed. Please try again.", 500);
   }
 }

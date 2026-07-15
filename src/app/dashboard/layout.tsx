@@ -20,6 +20,8 @@ async function getSalonUser(): Promise<SalonUser | null> {
     email: salon.email,
     staffCount: salon.staffCount,
     location: salon.location,
+    salonNumber: salon.salonNumber,
+    authProvider: salon.authProvider ?? "email",
   };
 }
 

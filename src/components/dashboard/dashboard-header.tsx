@@ -28,6 +28,8 @@ export function DashboardHeader({ salon }: DashboardHeaderProps) {
     { href: "/dashboard", label: "Dashboard" },
     { href: "/dashboard/stylists", label: "All Stylists" },
     { href: "/dashboard/stylists/add", label: "Add Stylist" },
+    { href: "/dashboard/verify", label: "Verify Stylist" },
+    { href: "/dashboard/profile", label: "Profile" },
   ];
 
   return (
@@ -78,9 +80,12 @@ export function DashboardHeader({ salon }: DashboardHeaderProps) {
           </Sheet>
 
           <div className="hidden items-center gap-2 sm:flex">
-            <div className="max-w-[180px] truncate rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium">
+            <Link
+              href="/dashboard/profile"
+              className="max-w-[180px] truncate rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium transition-colors hover:bg-muted"
+            >
               {salon.salonName}
-            </div>
+            </Link>
             <Button variant="outline" size="sm" onClick={handleLogout}>
               <LogOut className="mr-2 size-4" />
               Logout

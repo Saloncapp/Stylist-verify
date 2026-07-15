@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { loginSchema, type LoginInput } from "@/lib/validations";
 import { toast } from "sonner";
 
@@ -47,6 +48,15 @@ export function LoginForm() {
     }
   }
 
+  function handleGoogleSuccess() {
+    router.push("/dashboard");
+    router.refresh();
+  }
+
+  function handleGoogleNeedsProfile() {
+    router.push("/register/complete");
+  }
+
   return (
     <Card className="w-full max-w-md shadow-sm">
       <CardHeader className="text-center">
@@ -54,37 +64,53 @@ export function LoginForm() {
         <CardDescription>Sign in to manage your salon stylists</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email Address</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@salon.com"
-              {...register("email")}
-            />
-            {errors.email && (
-              <p className="text-sm text-danger">{errors.email.message}</p>
-            )}
+        <div className="space-y-4">
+          <GoogleSignInButton
+            onSuccess={handleGoogleSuccess}
+            onNeedsProfile={handleGoogleNeedsProfile}
+          />
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">Or</span>
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <PasswordInput
-              id="password"
-              placeholder="••••••••"
-              {...register("password")}
-            />
-            {errors.password && (
-              <p className="text-sm text-danger">{errors.password.message}</p>
-            )}
-          </div>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@salon.com"
+                {...register("email")}
+              />
+              {errors.email && (
+                <p className="text-sm text-danger">{errors.email.message}</p>
+              )}
+            </div>
 
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting && <Loader2 className="mr-2 size-4 animate-spin" />}
-            Sign In
-          </Button>
-        </form>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <PasswordInput
+                id="password"
+                placeholder="••••••••"
+                {...register("password")}
+              />
+              {errors.password && (
+                <p className="text-sm text-danger">{errors.password.message}</p>
+              )}
+            </div>
+
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 size-4 animate-spin" />}
+              Sign In
+            </Button>
+          </form>
+        </div>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
           Don&apos;t have an account?{" "}

@@ -24,6 +24,14 @@ export async function POST(request: NextRequest) {
       return jsonError("Invalid email or password", 401);
     }
 
+    if (salon.authProvider === "google") {
+      return jsonError("This account uses Google sign-in. Please continue with Google.", 401);
+    }
+
+    if (!salon.password) {
+      return jsonError("Invalid email or password", 401);
+    }
+
     const isValid = await bcrypt.compare(password, salon.password);
     if (!isValid) {
       return jsonError("Invalid email or password", 401);

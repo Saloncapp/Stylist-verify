@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { connectDB } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { formatStylist } from "@/lib/formatters";
@@ -39,10 +38,16 @@ export default async function DashboardPage() {
             Overview of your registered stylists
           </p>
         </div>
-        <LinkButton href="/dashboard/stylists/add">
-          <Plus className="mr-2 size-4" />
-          Add Stylist
-        </LinkButton>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <LinkButton href="/dashboard/verify" variant="outline">
+            <Search className="mr-2 size-4" />
+            Verify Stylist
+          </LinkButton>
+          <LinkButton href="/dashboard/stylists/add">
+            <Plus className="mr-2 size-4" />
+            Add Stylist
+          </LinkButton>
+        </div>
       </div>
 
       <StatsCards stats={stats} />
