@@ -23,6 +23,9 @@ export interface SalonUser {
   location: string;
   salonNumber?: string;
   authProvider: AuthProvider;
+  /** True when account is linked to Google (native Google signup or verified via Google) */
+  googleLinked: boolean;
+  salonNumberVerified: boolean;
 }
 
 export interface VerificationEmploymentPrivateEntry

@@ -64,6 +64,12 @@ export async function PATCH(request: NextRequest) {
     }
 
     const previousSalonName = salon.salonName;
+    const previousEmail = salon.email.toLowerCase();
+    const previousSalonNumber = salon.salonNumber ?? "";
+    const shouldUnlinkGoogle =
+      normalizedEmail !== previousEmail &&
+      Boolean(salon.googleUid) &&
+      salon.authProvider === "email";
 
     salon.salonName = salonName;
     salon.ownerName = ownerName;
@@ -72,7 +78,17 @@ export async function PATCH(request: NextRequest) {
     salon.location = location;
     salon.salonNumber = salonNumber;
 
+    if (salonNumber !== previousSalonNumber) {
+      salon.salonNumberVerified = false;
+    }
+
     await salon.save();
+
+    // Changing email after Google link requires re-linking with the new Google email
+    if (shouldUnlinkGoogle) {
+      await Salon.updateOne({ _id: salon._id }, { $unset: { googleUid: 1 } });
+      salon.googleUid = undefined;
+    }
 
     if (previousSalonName !== salonName) {
       await Stylist.updateMany(

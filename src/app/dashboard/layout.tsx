@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { connectDB } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { getSession, toSalonUser } from "@/lib/auth";
 import Salon from "@/models/Salon";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import type { SalonUser } from "@/types";
@@ -13,16 +13,7 @@ async function getSalonUser(): Promise<SalonUser | null> {
   const salon = await Salon.findById(session.salonId).select("-password");
   if (!salon) return null;
 
-  return {
-    id: salon._id.toString(),
-    salonName: salon.salonName,
-    ownerName: salon.ownerName,
-    email: salon.email,
-    staffCount: salon.staffCount,
-    location: salon.location,
-    salonNumber: salon.salonNumber,
-    authProvider: salon.authProvider ?? "email",
-  };
+  return toSalonUser(salon);
 }
 
 export default async function DashboardLayout({

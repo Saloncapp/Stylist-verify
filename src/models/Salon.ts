@@ -13,6 +13,7 @@ export interface ISalon extends Document {
   location: string;
   /** Salon contact phone — optional for legacy records, required on new registration */
   salonNumber?: string;
+  salonNumberVerified: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -32,6 +33,7 @@ const SalonSchema = new Schema<ISalon>(
     staffCount: { type: Number, required: true, min: 1 },
     location: { type: String, required: true, trim: true },
     salonNumber: { type: String, trim: true },
+    salonNumberVerified: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

@@ -59,6 +59,17 @@ export const completeGoogleProfileSchema = completeProfileSchema.extend({
   idToken: z.string().min(1, "ID token is required"),
 });
 
+export const linkGoogleSchema = z.object({
+  idToken: z.string().min(1, "ID token is required"),
+});
+
+export const verifyPhoneSchema = z.object({
+  idToken: z.string().min(1, "ID token is required"),
+  salonNumber: z
+    .string()
+    .regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit Indian mobile number"),
+});
+
 export const stylistSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   mobileNumber: z
@@ -118,6 +129,8 @@ export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>;
 export type PasswordUpdateInput = z.infer<typeof passwordUpdateSchema>;
 export type GoogleAuthInput = z.infer<typeof googleAuthSchema>;
 export type CompleteGoogleProfileInput = z.infer<typeof completeGoogleProfileSchema>;
+export type LinkGoogleInput = z.infer<typeof linkGoogleSchema>;
+export type VerifyPhoneInput = z.infer<typeof verifyPhoneSchema>;
 export type StylistInput = z.infer<typeof stylistSchema>;
 export type StatusUpdateInput = z.infer<typeof statusUpdateSchema>;
 export type VerifyInput = z.infer<typeof verifySchema>;

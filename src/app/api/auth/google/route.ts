@@ -34,9 +34,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (salon) {
-      if (salon.authProvider === "email") {
+      // Email/password accounts must link Google from profile first
+      if (salon.authProvider === "email" && !salon.googleUid) {
         return jsonError(
-          "An account with this email already exists. Please sign in with your password.",
+          "An account with this email already exists. Please sign in with your password, then verify email with Google from Profile.",
           409
         );
       }
@@ -44,6 +45,11 @@ export async function POST(request: NextRequest) {
       if (!salon.googleUid) {
         salon.googleUid = googleUid;
         await salon.save();
+      } else if (salon.googleUid !== googleUid) {
+        return jsonError(
+          "This email is linked to a different Google account.",
+          409
+        );
       }
 
       const token = await createSession({

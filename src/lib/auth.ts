@@ -66,8 +66,11 @@ export function toSalonUser(
     location: string;
     salonNumber?: string;
     authProvider?: "email" | "google";
+    googleUid?: string;
+    salonNumberVerified?: boolean;
   }
 ): SalonUser {
+  const authProvider = salon.authProvider ?? "email";
   return {
     id: salon._id.toString(),
     salonName: salon.salonName,
@@ -76,6 +79,8 @@ export function toSalonUser(
     staffCount: salon.staffCount,
     location: salon.location,
     salonNumber: salon.salonNumber,
-    authProvider: salon.authProvider ?? "email",
+    authProvider,
+    googleLinked: authProvider === "google" || Boolean(salon.googleUid),
+    salonNumberVerified: Boolean(salon.salonNumberVerified),
   };
 }
