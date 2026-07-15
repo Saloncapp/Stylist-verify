@@ -18,11 +18,20 @@ import {
   clearGooglePendingAuth,
   getGooglePendingAuth,
 } from "@/components/auth/google-sign-in-button";
+import {
+  clearEmailPendingAuth,
+  getEmailPendingAuth,
+  type EmailPendingAuth,
+} from "@/lib/pending-auth";
 import { toast } from "sonner";
+
+type PendingAuth =
+  | { type: "google"; email: string; ownerName: string; idToken: string }
+  | { type: "email"; email: string; password: string };
 
 export function CompleteProfileForm() {
   const router = useRouter();
-  const [pending, setPending] = useState<ReturnType<typeof getGooglePendingAuth>>(null);
+  const [pending, setPending] = useState<PendingAuth | null>(null);
   const [ready, setReady] = useState(false);
 
   const {
@@ -35,21 +44,44 @@ export function CompleteProfileForm() {
   });
 
   useEffect(() => {
-    const auth = getGooglePendingAuth();
-    if (!auth) {
-      router.replace("/login");
+    const google = getGooglePendingAuth();
+    if (google) {
+      setPending({
+        type: "google",
+        email: google.profile.email,
+        ownerName: google.profile.ownerName,
+        idToken: google.idToken,
+      });
+      reset({
+        ownerName: google.profile.ownerName,
+        salonName: "",
+        staffCount: 1,
+        location: "",
+        salonNumber: "",
+      });
+      setReady(true);
       return;
     }
 
-    setPending(auth);
-    reset({
-      ownerName: auth.profile.ownerName,
-      salonName: "",
-      staffCount: 1,
-      location: "",
-      salonNumber: "",
-    });
-    setReady(true);
+    const emailAuth = getEmailPendingAuth();
+    if (emailAuth) {
+      setPending({
+        type: "email",
+        email: emailAuth.email,
+        password: emailAuth.password,
+      });
+      reset({
+        ownerName: "",
+        salonName: "",
+        staffCount: 1,
+        location: "",
+        salonNumber: "",
+      });
+      setReady(true);
+      return;
+    }
+
+    router.replace("/register");
   }, [reset, router]);
 
   if (!ready || !pending) {
@@ -57,32 +89,72 @@ export function CompleteProfileForm() {
   }
 
   async function onSubmit(data: CompleteProfileInput) {
-    const auth = getGooglePendingAuth();
-    if (!auth) {
-      toast.error("Google session expired. Please sign in again.");
-      router.replace("/login");
+    if (!pending) {
+      toast.error("Session expired. Please start registration again.");
+      router.replace("/register");
       return;
     }
 
     try {
-      const res = await fetch("/api/auth/complete-profile", {
+      if (pending.type === "google") {
+        const auth = getGooglePendingAuth();
+        if (!auth) {
+          toast.error("Google session expired. Please sign in again.");
+          router.replace("/register");
+          return;
+        }
+
+        const res = await fetch("/api/auth/complete-profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...data,
+            idToken: auth.idToken,
+          }),
+        });
+
+        const result = await res.json();
+
+        if (!result.success) {
+          toast.error(result.message || "Failed to complete registration");
+          return;
+        }
+
+        clearGooglePendingAuth();
+        clearEmailPendingAuth();
+        toast.success("Salon profile created successfully!");
+        router.push("/dashboard");
+        router.refresh();
+        return;
+      }
+
+      const emailAuth: EmailPendingAuth | null = getEmailPendingAuth();
+      if (!emailAuth) {
+        toast.error("Registration session expired. Please start again.");
+        router.replace("/register");
+        return;
+      }
+
+      const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...data,
-          idToken: auth.idToken,
+          email: emailAuth.email,
+          password: emailAuth.password,
         }),
       });
 
       const result = await res.json();
 
       if (!result.success) {
-        toast.error(result.message || "Failed to complete registration");
+        toast.error(result.message || "Registration failed");
         return;
       }
 
+      clearEmailPendingAuth();
       clearGooglePendingAuth();
-      toast.success("Salon profile created successfully!");
+      toast.success("Account created successfully!");
       router.push("/dashboard");
       router.refresh();
     } catch {
@@ -95,7 +167,7 @@ export function CompleteProfileForm() {
       <CardHeader className="text-center">
         <CardTitle className="text-2xl">Complete Your Salon Profile</CardTitle>
         <CardDescription>
-          Finish setting up your salon account to access the dashboard
+          Step 2 of 2 — fill in your salon details
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -105,12 +177,14 @@ export function CompleteProfileForm() {
             <Input
               id="email"
               type="email"
-              value={pending.profile.email}
+              value={pending.email}
               disabled
               className="bg-muted"
             />
             <p className="text-xs text-muted-foreground">
-              This email is linked to your Google account
+              {pending.type === "google"
+                ? "This email is linked to your Google account"
+                : "Authenticated with this email"}
             </p>
           </div>
 

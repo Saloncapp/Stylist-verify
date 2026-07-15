@@ -10,8 +10,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { registerSchema, type RegisterInput } from "@/lib/validations";
-import { handleDigitInput } from "@/lib/digit-input";
+import { GoogleSignInButton, clearGooglePendingAuth } from "@/components/auth/google-sign-in-button";
+import {
+  registerAuthSchema,
+  type RegisterAuthInput,
+} from "@/lib/validations";
+import {
+  clearEmailPendingAuth,
+  storeEmailPendingAuth,
+} from "@/lib/pending-auth";
 import { toast } from "sonner";
 
 export function RegisterForm() {
@@ -21,31 +28,46 @@ export function RegisterForm() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<RegisterInput>({
-    resolver: zodResolver(registerSchema),
+  } = useForm<RegisterAuthInput>({
+    resolver: zodResolver(registerAuthSchema),
   });
 
-  async function onSubmit(data: RegisterInput) {
+  async function onSubmit(data: RegisterAuthInput) {
     try {
-      const res = await fetch("/api/auth/register", {
+      const res = await fetch("/api/auth/check-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ email: data.email }),
       });
 
       const result = await res.json();
 
       if (!result.success) {
-        toast.error(result.message || "Registration failed");
+        toast.error(result.message || "This email cannot be used");
         return;
       }
 
-      toast.success("Account created successfully!");
-      router.push("/dashboard");
-      router.refresh();
+      clearGooglePendingAuth();
+      storeEmailPendingAuth({
+        email: data.email.toLowerCase().trim(),
+        password: data.password,
+      });
+
+      router.push("/register/complete");
     } catch {
       toast.error("Something went wrong");
     }
+  }
+
+  function handleGoogleSuccess() {
+    clearEmailPendingAuth();
+    router.push("/dashboard");
+    router.refresh();
+  }
+
+  function handleGoogleNeedsProfile() {
+    clearEmailPendingAuth();
+    router.push("/register/complete");
   }
 
   return (
@@ -53,99 +75,58 @@ export function RegisterForm() {
       <CardHeader className="text-center">
         <CardTitle className="text-2xl">Register Your Salon</CardTitle>
         <CardDescription>
-          Create an account to start managing stylist records
+          Step 1 of 2 — authenticate with email or Google
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="salonName">Salon Name</Label>
-            <Input id="salonName" placeholder="Your salon name" {...register("salonName")} />
-            {errors.salonName && (
-              <p className="text-sm text-danger">{errors.salonName.message}</p>
-            )}
+        <div className="space-y-4">
+          <GoogleSignInButton
+            onSuccess={handleGoogleSuccess}
+            onNeedsProfile={handleGoogleNeedsProfile}
+            label="Continue with Google"
+          />
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">Or</span>
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="ownerName">Owner / Manager Name</Label>
-            <Input id="ownerName" placeholder="Full name" {...register("ownerName")} />
-            {errors.ownerName && (
-              <p className="text-sm text-danger">{errors.ownerName.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email">Email Address</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@salon.com"
-              {...register("email")}
-            />
-            {errors.email && (
-              <p className="text-sm text-danger">{errors.email.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="salonNumber">Salon Number</Label>
-            <Input
-              id="salonNumber"
-              type="text"
-              inputMode="numeric"
-              autoComplete="tel"
-              maxLength={10}
-              placeholder="10-digit salon contact number"
-              {...register("salonNumber", {
-                onChange: (e) => handleDigitInput(e, 10),
-              })}
-            />
-            {errors.salonNumber && (
-              <p className="text-sm text-danger">{errors.salonNumber.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <PasswordInput
-              id="password"
-              placeholder="Min 8 chars, 1 uppercase, 1 number"
-              {...register("password")}
-            />
-            {errors.password && (
-              <p className="text-sm text-danger">{errors.password.message}</p>
-            )}
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="staffCount">Staff Count</Label>
+              <Label htmlFor="email">Email Address</Label>
               <Input
-                id="staffCount"
-                type="number"
-                min={1}
-                placeholder="e.g. 10"
-                {...register("staffCount", { valueAsNumber: true })}
+                id="email"
+                type="email"
+                placeholder="you@salon.com"
+                {...register("email")}
               />
-              {errors.staffCount && (
-                <p className="text-sm text-danger">{errors.staffCount.message}</p>
+              {errors.email && (
+                <p className="text-sm text-danger">{errors.email.message}</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="location">Salon Location</Label>
-              <Input id="location" placeholder="City, State" {...register("location")} />
-              {errors.location && (
-                <p className="text-sm text-danger">{errors.location.message}</p>
+              <Label htmlFor="password">Password</Label>
+              <PasswordInput
+                id="password"
+                placeholder="Min 8 chars, 1 uppercase, 1 number"
+                {...register("password")}
+              />
+              {errors.password && (
+                <p className="text-sm text-danger">{errors.password.message}</p>
               )}
             </div>
-          </div>
 
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting && <Loader2 className="mr-2 size-4 animate-spin" />}
-            Create Account
-          </Button>
-        </form>
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 size-4 animate-spin" />}
+              Continue
+            </Button>
+          </form>
+        </div>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
           Already have an account?{" "}

@@ -1,24 +1,12 @@
 import { z } from "zod";
 
-export const registerSchema = z.object({
-  salonName: z.string().min(2, "Salon name must be at least 2 characters"),
-  ownerName: z.string().min(2, "Owner name must be at least 2 characters"),
+export const registerAuthSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z
     .string()
     .min(8, "Password must be at least 8 characters")
     .regex(/[A-Z]/, "Password must contain an uppercase letter")
     .regex(/[0-9]/, "Password must contain a number"),
-  staffCount: z.number().min(1, "Staff count must be at least 1"),
-  location: z.string().min(2, "Location is required"),
-  salonNumber: z
-    .string()
-    .regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit Indian mobile number"),
-});
-
-export const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(1, "Password is required"),
 });
 
 export const completeProfileSchema = z.object({
@@ -29,6 +17,13 @@ export const completeProfileSchema = z.object({
   salonNumber: z
     .string()
     .regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit Indian mobile number"),
+});
+
+export const registerSchema = registerAuthSchema.merge(completeProfileSchema);
+
+export const loginSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
 });
 
 export const profileUpdateSchema = z.object({
@@ -122,6 +117,7 @@ export const verifySchema = z
     }
   });
 
+export type RegisterAuthInput = z.infer<typeof registerAuthSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type CompleteProfileInput = z.infer<typeof completeProfileSchema>;
