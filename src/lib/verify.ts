@@ -167,7 +167,7 @@ export function buildVerifiedStylistFromRecords(
     maskedAadhaar: maskAadhaar(aadhaarPlain),
     level: activeRecord.level,
     status: activeRecord.status,
-    photoUrl: latest.photoUrl,
+    photoUrl: latest.photoUrl ?? "",
     employmentHistory: buildEmploymentHistory(sorted),
   };
 }
@@ -184,10 +184,10 @@ export function buildPrivateVerifiedStylistFromRecords(
     name: displayName,
     mobileNumber: latest.mobileNumber,
     aadhaarMasked: maskAadhaar(aadhaarPlain),
-    address: latest.address,
+    address: latest.address ?? "",
     level: activeRecord.level,
     status: activeRecord.status,
-    photoUrl: latest.photoUrl,
+    photoUrl: latest.photoUrl ?? "",
     employmentHistory: buildPrivateEmploymentHistory(sorted),
   };
 }

@@ -38,10 +38,10 @@ export interface VerifiedStylistPrivateResult {
   name: string;
   mobileNumber: string;
   aadhaarMasked: string;
-  address: string;
+  address?: string;
   level: StylistLevel;
   status: StylistStatus;
-  photoUrl: string;
+  photoUrl?: string;
   employmentHistory: VerificationEmploymentPrivateEntry[];
 }
 
@@ -60,8 +60,8 @@ export interface StylistRecord {
   level: StylistLevel;
   aadhaarNumber: string;
   aadhaarMasked: string;
-  address: string;
-  photoUrl: string;
+  address?: string;
+  photoUrl?: string;
   status: StylistStatus;
   joiningDate: string;
   leavingDate?: string;
@@ -81,7 +81,7 @@ export interface VerifiedStylistResult {
   maskedAadhaar: string;
   level: StylistLevel;
   status: StylistStatus;
-  photoUrl: string;
+  photoUrl?: string;
   employmentHistory: VerificationEmploymentEntry[];
 }
 

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2 } from "lucide-react";
+import { Loader2, User } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -67,13 +67,17 @@ export function StylistDetail({ stylist }: { stylist: StylistRecord }) {
     <div className="mx-auto max-w-3xl space-y-6">
       <Card className="shadow-sm">
         <CardContent className="flex flex-col items-center gap-6 p-6 sm:flex-row sm:items-start">
-          <div className="relative size-28 overflow-hidden rounded-2xl border border-border">
-            <Image
-              src={stylist.photoUrl}
-              alt={stylist.name}
-              fill
-              className="object-cover"
-            />
+          <div className="relative flex size-28 items-center justify-center overflow-hidden rounded-2xl border border-border bg-muted">
+            {stylist.photoUrl ? (
+              <Image
+                src={stylist.photoUrl}
+                alt={stylist.name}
+                fill
+                className="object-cover"
+              />
+            ) : (
+              <User className="size-12 text-muted-foreground" />
+            )}
           </div>
           <div className="flex-1 text-center sm:text-left">
             <div className="flex flex-col items-center gap-2 sm:flex-row">
@@ -97,7 +101,9 @@ export function StylistDetail({ stylist }: { stylist: StylistRecord }) {
                 {format(stylist.joiningDate)}
               </p>
             </div>
-            <p className="mt-2 text-sm text-muted-foreground">{stylist.address}</p>
+            {stylist.address ? (
+              <p className="mt-2 text-sm text-muted-foreground">{stylist.address}</p>
+            ) : null}
           </div>
         </CardContent>
       </Card>

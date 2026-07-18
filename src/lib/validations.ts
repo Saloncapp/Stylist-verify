@@ -65,20 +65,33 @@ export const verifyPhoneSchema = z.object({
     .regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit Indian mobile number"),
 });
 
-export const stylistSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  mobileNumber: z
-    .string()
-    .regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit Indian mobile number"),
-  level: z.enum(["L1", "L2", "L3", "L4"]),
-  aadhaarNumber: z
-    .string()
-    .regex(/^\d{12}$/, "Aadhaar must be exactly 12 digits"),
-  address: z.string().min(5, "Address is required"),
-  photoUrl: z.string().url("Photo is required"),
-  status: z.enum(["Active", "Relieved", "Abscond"]),
-  remark: z.string().optional(),
-});
+export const stylistSchema = z
+  .object({
+    name: z.string().min(2, "Name must be at least 2 characters"),
+    mobileNumber: z
+      .string()
+      .regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit Indian mobile number"),
+    level: z.enum(["L1", "L2", "L3", "L4"]),
+    aadhaarNumber: z
+      .string()
+      .regex(/^\d{12}$/, "Aadhaar must be exactly 12 digits"),
+    address: z.string(),
+    photoUrl: z.union([z.string().url("Invalid photo URL"), z.literal("")]),
+    status: z.enum(["Active", "Relieved", "Abscond"]),
+    remark: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (
+      (data.status === "Relieved" || data.status === "Abscond") &&
+      (!data.remark || data.remark.trim().length < 5)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Remark is required (minimum 5 characters)",
+        path: ["remark"],
+      });
+    }
+  });
 
 export const statusUpdateSchema = z
   .object({

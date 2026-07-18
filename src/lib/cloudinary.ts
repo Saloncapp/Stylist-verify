@@ -31,7 +31,7 @@ export async function uploadImage(
   const result = await cloudinary.uploader.upload(dataUri, {
     folder,
     resource_type: "image",
-    transformation: [{ width: 400, height: 400, crop: "fill", gravity: "auto" }],
+    transformation: [{ width: 400, height: 400, crop: "limit" }],
   });
 
   if (!result.secure_url) {

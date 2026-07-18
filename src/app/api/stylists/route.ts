@@ -54,13 +54,6 @@ export async function POST(request: NextRequest) {
 
     const data = parsed.data;
 
-    if (
-      (data.status === "Relieved" || data.status === "Abscond") &&
-      (!data.remark || data.remark.trim().length < 5)
-    ) {
-      return jsonError("Remark is required for Relieved or Abscond status", 400);
-    }
-
     await connectDB();
 
     const salon = await Salon.findById(session.salonId);
@@ -107,8 +100,8 @@ export async function POST(request: NextRequest) {
       level: data.level,
       aadhaarHash,
       aadhaarEncrypted,
-      address: data.address,
-      photoUrl: data.photoUrl,
+      address: data.address ?? "",
+      photoUrl: data.photoUrl ?? "",
       status: data.status,
       joiningDate: now,
       leavingDate: historyEntry.leavingDate,

@@ -41,7 +41,7 @@ export function StylistTable({ stylists }: { stylists: StylistRecord[] }) {
                 <tr key={stylist.id} className="border-b border-border last:border-0">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="relative size-10 overflow-hidden rounded-full bg-muted">
+                      <div className="relative flex size-10 items-center justify-center overflow-hidden rounded-full bg-muted">
                         {stylist.photoUrl ? (
                           <Image
                             src={stylist.photoUrl}
@@ -49,7 +49,11 @@ export function StylistTable({ stylists }: { stylists: StylistRecord[] }) {
                             fill
                             className="object-cover"
                           />
-                        ) : null}
+                        ) : (
+                          <span className="text-xs font-medium text-muted-foreground">
+                            {stylist.name.charAt(0).toUpperCase()}
+                          </span>
+                        )}
                       </div>
                       <span className="font-medium">{stylist.name}</span>
                     </div>

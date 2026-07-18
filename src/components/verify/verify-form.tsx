@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
-import { Loader2, Lock, Search, Users } from "lucide-react";
+import { Loader2, Lock, Search, Users, User } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -79,13 +79,17 @@ function StylistResultCard({ stylist }: { stylist: VerifiedStylistResult }) {
     <div className="space-y-4">
       <Card className="shadow-sm">
         <CardContent className="flex flex-col items-center gap-6 p-6 sm:flex-row sm:items-start">
-          <div className="relative size-28 overflow-hidden rounded-2xl border border-border">
-            <Image
-              src={stylist.photoUrl}
-              alt={stylist.name}
-              fill
-              className="object-cover"
-            />
+          <div className="relative flex size-28 items-center justify-center overflow-hidden rounded-2xl border border-border bg-muted">
+            {stylist.photoUrl ? (
+              <Image
+                src={stylist.photoUrl}
+                alt={stylist.name}
+                fill
+                className="object-cover"
+              />
+            ) : (
+              <User className="size-12 text-muted-foreground" />
+            )}
           </div>
           <div className="flex-1 text-center sm:text-left">
             <div className="flex flex-col items-center gap-2 sm:flex-row">
