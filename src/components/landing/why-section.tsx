@@ -20,7 +20,7 @@ const reasons = [
     icon: FileCheck,
     title: "Informed Hiring",
     description:
-      "Salon Staff provides verified employment records so you can hire with confidence, not guesswork.",
+      "Stylist Verify provides verified employment records so you can hire with confidence, not guesswork.",
   },
   {
     icon: TrendingUp,
@@ -36,7 +36,7 @@ export function WhySection() {
       <div className="mx-auto max-w-7xl">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            Why Salon Staff?
+            Why Stylist Verify?
           </h2>
           <p className="mt-4 text-muted-foreground">
             The salon industry faces unique hiring challenges. We built a solution

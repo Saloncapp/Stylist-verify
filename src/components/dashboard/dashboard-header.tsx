@@ -40,7 +40,7 @@ export function DashboardHeader({ salon }: DashboardHeaderProps) {
             <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <ShieldCheck className="size-4" />
             </div>
-            <span className="hidden font-semibold sm:inline">Salon Staff</span>
+            <span className="hidden font-semibold sm:inline">Stylist Verify</span>
           </Link>
 
           <nav className="hidden items-center gap-1 md:flex">

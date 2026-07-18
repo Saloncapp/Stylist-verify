@@ -11,7 +11,7 @@ export function Footer() {
               <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                 <ShieldCheck className="size-4" />
               </div>
-              <span className="font-semibold">Salon Staff</span>
+              <span className="font-semibold">Stylist Verify</span>
             </div>
             <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
               A trusted employment verification platform for the salon industry.
@@ -43,7 +43,7 @@ export function Footer() {
           <div>
             <h3 className="text-sm font-semibold">Contact</h3>
             <p className="mt-4 text-sm text-muted-foreground">
-              support@salonstaff.com
+              support@stylistverify.com
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
               Built for salon owners across India
@@ -52,7 +52,7 @@ export function Footer() {
         </div>
 
         <div className="mt-10 border-t border-border pt-6 text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} Salon Staff. All rights reserved.
+          © {new Date().getFullYear()} Stylist Verify. All rights reserved.
         </div>
       </div>
     </footer>

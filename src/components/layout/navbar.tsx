@@ -16,14 +16,14 @@ export function Navbar({ variant = "landing" }: NavbarProps) {
             <ShieldCheck className="size-5" />
           </div>
           <span className="text-lg font-semibold tracking-tight text-foreground">
-            Salon Staff
+            Stylist Verify
           </span>
         </Link>
 
         {variant === "landing" && (
           <nav className="hidden items-center gap-8 md:flex">
             <a href="#why" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-              Why Salon Staff
+              Why Stylist Verify
             </a>
             <a href="#how-it-works" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
               How It Works

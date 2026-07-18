@@ -6,9 +6,9 @@ import { cn } from "@/lib/utils";
 
 const faqs = [
   {
-    question: "Is Salon Staff a blacklist platform?",
+    question: "Is Stylist Verify a blacklist platform?",
     answer:
-      "No. Salon Staff is not designed to blacklist stylists. It provides verified employment records so salon owners can make informed hiring decisions based on factual history.",
+      "No. Stylist Verify is not designed to blacklist stylists. It provides verified employment records so salon owners can make informed hiring decisions based on factual history.",
   },
   {
     question: "How do I verify a stylist?",
@@ -18,7 +18,7 @@ const faqs = [
   {
     question: "Can the same stylist appear under multiple salons?",
     answer:
-      "Yes. If a stylist has worked at multiple salons that use Salon Staff, all employment records will appear in chronological order on the verification page.",
+      "Yes. If a stylist has worked at multiple salons that use Stylist Verify, all employment records will appear in chronological order on the verification page.",
   },
   {
     question: "What information is required to register a stylist?",
@@ -43,7 +43,7 @@ export function FAQSection() {
             Frequently Asked Questions
           </h2>
           <p className="mt-4 text-muted-foreground">
-            Everything you need to know about Salon Staff
+            Everything you need to know about Stylist Verify
           </p>
         </div>
 

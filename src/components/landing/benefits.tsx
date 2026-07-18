@@ -24,7 +24,7 @@ export function BenefitsSection() {
               Benefits for Salon Owners
             </h2>
             <p className="mt-4 text-muted-foreground">
-              Salon Staff gives you the tools to hire smarter and manage your
+              Stylist Verify gives you the tools to hire smarter and manage your
               team with complete visibility.
             </p>
           </div>

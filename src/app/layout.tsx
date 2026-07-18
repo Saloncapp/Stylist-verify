@@ -11,8 +11,8 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "Salon Staff — Employment Verification for Salons",
-    template: "%s | Salon Staff",
+    default: "Stylist Verify — Employment Verification for Salons",
+    template: "%s | Stylist Verify",
   },
   description:
     "Verify stylist employment history before hiring. A trusted verification platform for the salon industry.",
