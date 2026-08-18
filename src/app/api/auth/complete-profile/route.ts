@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
       return zodErrorResponse(parsed.error);
     }
 
-    const { idToken, salonName, ownerName, staffCount, location, salonNumber } =
+    const { idToken, salonName, ownerName, staffCount, location, salonNumber, salonType, logoUrl } =
       parsed.data;
 
     const decoded = await verifyFirebaseIdToken(idToken);
@@ -59,6 +59,8 @@ export async function POST(request: NextRequest) {
       staffCount,
       location,
       salonNumber,
+      salonType,
+      logoUrl: logoUrl ?? "",
     });
 
     const token = await createSession({

@@ -18,7 +18,11 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/status-badge";
+import { EmploymentSalonHeader } from "@/components/employment-salon-header";
+import { EmploymentHistoryDetails } from "@/components/employment-history-details";
+import { PerformanceRatingBadge } from "@/components/performance/performance-rating-display";
 import { statusUpdateSchema, type StatusUpdateInput } from "@/lib/validations";
+import { formatEmploymentDuration } from "@/lib/employment-duration";
 import type { StylistRecord } from "@/types";
 import { toast } from "sonner";
 import { format } from "@/lib/date";
@@ -91,6 +95,22 @@ export function StylistDetail({ stylist }: { stylist: StylistRecord }) {
               </p>
               <p>
                 <span className="text-muted-foreground">Level:</span> {stylist.level}
+              </p>
+              <p>
+                <span className="text-muted-foreground">Role / Position:</span>{" "}
+                {stylist.role}
+              </p>
+              <p>
+                <span className="text-muted-foreground">Employment Type:</span>{" "}
+                {stylist.employmentType}
+              </p>
+              <p>
+                <span className="text-muted-foreground">Duration:</span>{" "}
+                {formatEmploymentDuration(
+                  stylist.joiningDate,
+                  stylist.leavingDate,
+                  stylist.status
+                ) || "No data available"}
               </p>
               <p>
                 <span className="text-muted-foreground">Aadhaar:</span>{" "}
@@ -188,29 +208,14 @@ export function StylistDetail({ stylist }: { stylist: StylistRecord }) {
                   key={`${entry.updatedAt}-${index}`}
                   className="rounded-xl border border-border p-4"
                 >
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium">{entry.salonName}</p>
-                    <StatusBadge status={entry.status} />
+                  <div className="flex items-start justify-between gap-3">
+                    <EmploymentSalonHeader entry={entry} className="flex-1" />
+                    <div className="flex shrink-0 flex-col items-end gap-2">
+                      <PerformanceRatingBadge ratings={entry} />
+                      <StatusBadge status={entry.status} />
+                    </div>
                   </div>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Level: {entry.level}
-                  </p>
-                  {entry.joiningDate && (
-                    <p className="text-sm text-muted-foreground">
-                      Joined: {format(entry.joiningDate)}
-                    </p>
-                  )}
-                  {entry.leavingDate && (
-                    <p className="text-sm text-muted-foreground">
-                      Left: {format(entry.leavingDate)}
-                    </p>
-                  )}
-                  {entry.remark && (
-                    <p className="mt-2 text-sm">
-                      <span className="text-muted-foreground">Remark:</span>{" "}
-                      {entry.remark}
-                    </p>
-                  )}
+                  <EmploymentHistoryDetails entry={entry} salonOnly />
                 </div>
               ))}
             </div>

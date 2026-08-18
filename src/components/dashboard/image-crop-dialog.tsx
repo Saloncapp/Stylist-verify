@@ -17,6 +17,8 @@ import { getCroppedImageBlob } from "@/lib/crop-image";
 interface ImageCropDialogProps {
   open: boolean;
   imageSrc: string;
+  title?: string;
+  description?: string;
   onOpenChange: (open: boolean) => void;
   onCropped: (blob: Blob) => void | Promise<void>;
 }
@@ -24,6 +26,8 @@ interface ImageCropDialogProps {
 export function ImageCropDialog({
   open,
   imageSrc,
+  title = "Crop Staff Photo",
+  description = "Adjust the crop area, then confirm to upload.",
   onOpenChange,
   onCropped,
 }: ImageCropDialogProps) {
@@ -69,10 +73,8 @@ export function ImageCropDialog({
         showCloseButton={!processing}
       >
         <DialogHeader>
-          <DialogTitle>Crop Staff Photo</DialogTitle>
-          <DialogDescription>
-            Adjust the crop area, then confirm to upload.
-          </DialogDescription>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
 
         <div className="relative h-72 w-full overflow-hidden rounded-lg bg-muted">

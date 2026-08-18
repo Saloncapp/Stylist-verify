@@ -1,6 +1,8 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import type { SalonUser } from "@/types";
+import type { SalonType } from "@/lib/salon-constants";
+import { DEFAULT_SALON_TYPE } from "@/lib/salon-constants";
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "fallback-dev-secret-change-me"
@@ -65,6 +67,16 @@ export function toSalonUser(
     staffCount: number;
     location: string;
     salonNumber?: string;
+    logoUrl?: string;
+    salonType?: SalonType;
+    salonAddress?: string;
+    googleMapsLocation?: string;
+    websiteUrl?: string;
+    instagramUrl?: string;
+    facebookUrl?: string;
+    whatsappNumber?: string;
+    youtubeUrl?: string;
+    establishmentYear?: number;
     authProvider?: "email" | "google";
     googleUid?: string;
     salonNumberVerified?: boolean;
@@ -79,6 +91,16 @@ export function toSalonUser(
     staffCount: salon.staffCount,
     location: salon.location,
     salonNumber: salon.salonNumber,
+    logoUrl: salon.logoUrl || undefined,
+    salonType: salon.salonType ?? DEFAULT_SALON_TYPE,
+    salonAddress: salon.salonAddress || undefined,
+    googleMapsLocation: salon.googleMapsLocation || undefined,
+    websiteUrl: salon.websiteUrl || undefined,
+    instagramUrl: salon.instagramUrl || undefined,
+    facebookUrl: salon.facebookUrl || undefined,
+    whatsappNumber: salon.whatsappNumber || undefined,
+    youtubeUrl: salon.youtubeUrl || undefined,
+    establishmentYear: salon.establishmentYear || undefined,
     authProvider,
     googleLinked: authProvider === "google" || Boolean(salon.googleUid),
     salonNumberVerified: Boolean(salon.salonNumberVerified),

@@ -10,9 +10,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   completeProfileSchema,
   type CompleteProfileInput,
 } from "@/lib/validations";
+import { SALON_TYPES } from "@/lib/salon-constants";
 import { handleDigitInput } from "@/lib/digit-input";
 import {
   clearGooglePendingAuth,
@@ -38,9 +46,14 @@ export function CompleteProfileForm() {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<CompleteProfileInput>({
     resolver: zodResolver(completeProfileSchema),
+    defaultValues: {
+      salonType: "Unisex",
+    },
   });
 
   useEffect(() => {
@@ -58,6 +71,7 @@ export function CompleteProfileForm() {
         staffCount: 1,
         location: "",
         salonNumber: "",
+        salonType: "Unisex",
       });
       setReady(true);
       return;
@@ -76,6 +90,7 @@ export function CompleteProfileForm() {
         staffCount: 1,
         location: "",
         salonNumber: "",
+        salonType: "Unisex",
       });
       setReady(true);
       return;
@@ -193,6 +208,32 @@ export function CompleteProfileForm() {
             <Input id="salonName" placeholder="Your salon name" {...register("salonName")} />
             {errors.salonName && (
               <p className="text-sm text-danger">{errors.salonName.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="salonType">Salon Type</Label>
+            <Select
+              value={watch("salonType")}
+              onValueChange={(value) =>
+                setValue("salonType", value as CompleteProfileInput["salonType"], {
+                  shouldValidate: true,
+                })
+              }
+            >
+              <SelectTrigger id="salonType">
+                <SelectValue placeholder="Select salon type" />
+              </SelectTrigger>
+              <SelectContent>
+                {SALON_TYPES.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.salonType && (
+              <p className="text-sm text-danger">{errors.salonType.message}</p>
             )}
           </div>
 

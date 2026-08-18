@@ -1,4 +1,5 @@
 import mongoose, { Schema, type Document, type Model } from "mongoose";
+import type { SalonType } from "@/lib/salon-constants";
 
 export type AuthProvider = "email" | "google";
 
@@ -14,6 +15,16 @@ export interface ISalon extends Document {
   /** Salon contact phone — optional for legacy records, required on new registration */
   salonNumber?: string;
   salonNumberVerified: boolean;
+  logoUrl?: string;
+  salonType: SalonType;
+  salonAddress?: string;
+  googleMapsLocation?: string;
+  websiteUrl?: string;
+  instagramUrl?: string;
+  facebookUrl?: string;
+  whatsappNumber?: string;
+  youtubeUrl?: string;
+  establishmentYear?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -34,11 +45,28 @@ const SalonSchema = new Schema<ISalon>(
     location: { type: String, required: true, trim: true },
     salonNumber: { type: String, trim: true },
     salonNumberVerified: { type: Boolean, default: false },
+    logoUrl: { type: String, default: "" },
+    salonType: {
+      type: String,
+      enum: ["Unisex", "Men", "Women"],
+      default: "Unisex",
+    },
+    salonAddress: { type: String, default: "" },
+    googleMapsLocation: { type: String, default: "" },
+    websiteUrl: { type: String, default: "" },
+    instagramUrl: { type: String, default: "" },
+    facebookUrl: { type: String, default: "" },
+    whatsappNumber: { type: String, default: "" },
+    youtubeUrl: { type: String, default: "" },
+    establishmentYear: { type: Number },
   },
   { timestamps: true }
 );
 
-const Salon: Model<ISalon> =
-  mongoose.models.Salon ?? mongoose.model<ISalon>("Salon", SalonSchema);
+if (mongoose.models.Salon) {
+  delete mongoose.models.Salon;
+}
+
+const Salon: Model<ISalon> = mongoose.model<ISalon>("Salon", SalonSchema);
 
 export default Salon;

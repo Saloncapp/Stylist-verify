@@ -9,12 +9,28 @@ import {
   signInWithPhoneNumber,
   signInWithPopup,
 } from "firebase/auth";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { CheckCircle2, Loader2, Store, Upload } from "lucide-react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ImageCropDialog } from "@/components/dashboard/image-crop-dialog";
+import { SalonTypeBadge } from "@/components/salon-type-badge";
+import {
+  SALON_TYPES,
+  MIN_ESTABLISHMENT_YEAR,
+  MAX_ESTABLISHMENT_YEAR,
+} from "@/lib/salon-constants";
 import {
   passwordUpdateSchema,
   profileUpdateSchema,
@@ -42,12 +58,16 @@ export function SalonProfileForm({ initialSalon }: { initialSalon: SalonUser }) 
   const [confirmation, setConfirmation] = useState<ConfirmationResult | null>(
     null
   );
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [cropSrc, setCropSrc] = useState("");
+  const [cropOpen, setCropOpen] = useState(false);
 
   const {
     register: registerProfile,
     handleSubmit: handleProfileSubmit,
     reset: resetProfile,
     watch,
+    setValue,
     formState: { errors: profileErrors, isSubmitting: isProfileSubmitting },
   } = useForm<ProfileUpdateInput>({
     resolver: zodResolver(profileUpdateSchema),
@@ -56,8 +76,19 @@ export function SalonProfileForm({ initialSalon }: { initialSalon: SalonUser }) 
       ownerName: salon.ownerName,
       email: salon.email,
       staffCount: salon.staffCount,
-      location: salon.location,
       salonNumber: salon.salonNumber ?? "",
+      salonType: salon.salonType,
+      logoUrl: salon.logoUrl ?? "",
+      salonAddress: salon.salonAddress ?? "",
+      googleMapsLocation: salon.googleMapsLocation ?? "",
+      websiteUrl: salon.websiteUrl ?? "",
+      instagramUrl: salon.instagramUrl ?? "",
+      facebookUrl: salon.facebookUrl ?? "",
+      whatsappNumber: salon.whatsappNumber ?? "",
+      youtubeUrl: salon.youtubeUrl ?? "",
+      establishmentYear: salon.establishmentYear
+        ? String(salon.establishmentYear)
+        : "",
     },
   });
 
@@ -72,6 +103,62 @@ export function SalonProfileForm({ initialSalon }: { initialSalon: SalonUser }) 
 
   const watchedEmail = watch("email");
   const watchedSalonNumber = watch("salonNumber");
+  const watchedSalonType = watch("salonType");
+  const watchedLogoUrl = watch("logoUrl");
+
+  function handleLogoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      e.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCropSrc(reader.result as string);
+      setCropOpen(true);
+    };
+    reader.onerror = () => toast.error("Failed to read image");
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  }
+
+  async function handleCroppedLogoUpload(blob: Blob) {
+    setUploadingLogo(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", blob, "salon-logo.jpg");
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      const data = await res.json();
+
+      if (!data.success) {
+        toast.error(data.message || "Upload failed");
+        throw new Error("UPLOAD_FAILED");
+      }
+
+      setValue("logoUrl", data.data.url, { shouldValidate: true });
+      toast.success("Logo uploaded");
+    } catch (error) {
+      if (!(error instanceof Error && error.message === "UPLOAD_FAILED")) {
+        toast.error("Failed to upload logo");
+      }
+      throw error;
+    } finally {
+      setUploadingLogo(false);
+    }
+  }
+
+  function handleRemoveLogo() {
+    setValue("logoUrl", "", { shouldValidate: true });
+  }
 
   useEffect(() => {
     resetProfile({
@@ -79,8 +166,19 @@ export function SalonProfileForm({ initialSalon }: { initialSalon: SalonUser }) 
       ownerName: salon.ownerName,
       email: salon.email,
       staffCount: salon.staffCount,
-      location: salon.location,
       salonNumber: salon.salonNumber ?? "",
+      salonType: salon.salonType,
+      logoUrl: salon.logoUrl ?? "",
+      salonAddress: salon.salonAddress ?? "",
+      googleMapsLocation: salon.googleMapsLocation ?? "",
+      websiteUrl: salon.websiteUrl ?? "",
+      instagramUrl: salon.instagramUrl ?? "",
+      facebookUrl: salon.facebookUrl ?? "",
+      whatsappNumber: salon.whatsappNumber ?? "",
+      youtubeUrl: salon.youtubeUrl ?? "",
+      establishmentYear: salon.establishmentYear
+        ? String(salon.establishmentYear)
+        : "",
     });
   }, [salon, resetProfile]);
 
@@ -274,12 +372,108 @@ export function SalonProfileForm({ initialSalon }: { initialSalon: SalonUser }) 
     <div className="mx-auto max-w-2xl space-y-6">
       <div id="recaptcha-container" />
 
+      <ImageCropDialog
+        open={cropOpen}
+        imageSrc={cropSrc}
+        title="Crop Salon Logo"
+        description="Adjust the crop area for your salon logo, then confirm to upload."
+        onOpenChange={setCropOpen}
+        onCropped={handleCroppedLogoUpload}
+      />
+
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle>Salon Details</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleProfileSubmit(onProfileSubmit)} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Salon Logo (optional)</Label>
+                  <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+                    <div className="relative flex size-20 items-center justify-center overflow-hidden rounded-xl border border-border bg-muted">
+                      {watchedLogoUrl ? (
+                        <Image
+                          src={watchedLogoUrl}
+                          alt="Salon logo preview"
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <Store className="size-8 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={uploadingLogo}
+                        onClick={() =>
+                          document.getElementById("salon-logo-input")?.click()
+                        }
+                      >
+                        {uploadingLogo ? (
+                          <Loader2 className="mr-2 size-4 animate-spin" />
+                        ) : (
+                          <Upload className="mr-2 size-4" />
+                        )}
+                        {watchedLogoUrl ? "Change Logo" : "Upload Logo"}
+                      </Button>
+                      {watchedLogoUrl ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleRemoveLogo}
+                        >
+                          Remove
+                        </Button>
+                      ) : null}
+                      <input
+                        id="salon-logo-input"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleLogoSelect}
+                      />
+                    </div>
+                  </div>
+              {profileErrors.logoUrl && (
+                <p className="text-sm text-danger">{profileErrors.logoUrl.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="profile-salonType">Salon Type</Label>
+              <Select
+                value={watchedSalonType}
+                onValueChange={(value) =>
+                  setValue("salonType", value as ProfileUpdateInput["salonType"], {
+                    shouldValidate: true,
+                  })
+                }
+              >
+                <SelectTrigger id="profile-salonType">
+                  <SelectValue placeholder="Select salon type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SALON_TYPES.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {watchedSalonType && (
+                <SalonTypeBadge type={watchedSalonType} className="mt-1" />
+              )}
+              {profileErrors.salonType && (
+                <p className="text-sm text-danger">
+                  {profileErrors.salonType.message}
+                </p>
+              )}
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="profile-salonName">Salon Name</Label>
               <Input id="profile-salonName" {...registerProfile("salonName")} />
@@ -422,28 +616,188 @@ export function SalonProfileForm({ initialSalon }: { initialSalon: SalonUser }) 
               )}
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="profile-staffCount">Staff Count</Label>
+              <Input
+                id="profile-staffCount"
+                type="number"
+                min={1}
+                {...registerProfile("staffCount", { valueAsNumber: true })}
+              />
+              {profileErrors.staffCount && (
+                <p className="text-sm text-danger">
+                  {profileErrors.staffCount.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="profile-salonAddress">
+                Salon Address{" "}
+                <span className="font-normal text-muted-foreground">
+                  (optional)
+                </span>
+              </Label>
+              <Textarea
+                id="profile-salonAddress"
+                rows={3}
+                placeholder="Complete business address"
+                {...registerProfile("salonAddress")}
+              />
+              {profileErrors.salonAddress && (
+                <p className="text-sm text-danger">
+                  {profileErrors.salonAddress.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="profile-googleMapsLocation">
+                Google Maps Location{" "}
+                <span className="font-normal text-muted-foreground">
+                  (optional)
+                </span>
+              </Label>
+              <Input
+                id="profile-googleMapsLocation"
+                type="url"
+                placeholder="https://maps.google.com/..."
+                {...registerProfile("googleMapsLocation")}
+              />
+              {profileErrors.googleMapsLocation && (
+                <p className="text-sm text-danger">
+                  {profileErrors.googleMapsLocation.message}
+                </p>
+              )}
+            </div>
+
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="profile-staffCount">Staff Count</Label>
+                <Label htmlFor="profile-websiteUrl">
+                  Salon Website URL{" "}
+                  <span className="font-normal text-muted-foreground">
+                    (optional)
+                  </span>
+                </Label>
                 <Input
-                  id="profile-staffCount"
-                  type="number"
-                  min={1}
-                  {...registerProfile("staffCount", { valueAsNumber: true })}
+                  id="profile-websiteUrl"
+                  type="url"
+                  placeholder="https://www.example.com"
+                  {...registerProfile("websiteUrl")}
                 />
-                {profileErrors.staffCount && (
+                {profileErrors.websiteUrl && (
                   <p className="text-sm text-danger">
-                    {profileErrors.staffCount.message}
+                    {profileErrors.websiteUrl.message}
                   </p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="profile-location">Salon Location</Label>
-                <Input id="profile-location" {...registerProfile("location")} />
-                {profileErrors.location && (
+                <Label htmlFor="profile-establishmentYear">
+                  Establishment Year{" "}
+                  <span className="font-normal text-muted-foreground">
+                    (optional)
+                  </span>
+                </Label>
+                <Input
+                  id="profile-establishmentYear"
+                  type="number"
+                  min={MIN_ESTABLISHMENT_YEAR}
+                  max={MAX_ESTABLISHMENT_YEAR}
+                  placeholder="e.g. 2018"
+                  {...registerProfile("establishmentYear")}
+                />
+                {profileErrors.establishmentYear && (
                   <p className="text-sm text-danger">
-                    {profileErrors.location.message}
+                    {profileErrors.establishmentYear.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="profile-instagramUrl">
+                  Instagram URL{" "}
+                  <span className="font-normal text-muted-foreground">
+                    (optional)
+                  </span>
+                </Label>
+                <Input
+                  id="profile-instagramUrl"
+                  type="url"
+                  placeholder="https://www.instagram.com/your-salon"
+                  {...registerProfile("instagramUrl")}
+                />
+                {profileErrors.instagramUrl && (
+                  <p className="text-sm text-danger">
+                    {profileErrors.instagramUrl.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="profile-facebookUrl">
+                  Facebook URL{" "}
+                  <span className="font-normal text-muted-foreground">
+                    (optional)
+                  </span>
+                </Label>
+                <Input
+                  id="profile-facebookUrl"
+                  type="url"
+                  placeholder="https://www.facebook.com/your-salon"
+                  {...registerProfile("facebookUrl")}
+                />
+                {profileErrors.facebookUrl && (
+                  <p className="text-sm text-danger">
+                    {profileErrors.facebookUrl.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="profile-whatsappNumber">
+                  WhatsApp Number{" "}
+                  <span className="font-normal text-muted-foreground">
+                    (optional)
+                  </span>
+                </Label>
+                <Input
+                  id="profile-whatsappNumber"
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={10}
+                  placeholder="10-digit WhatsApp number"
+                  {...registerProfile("whatsappNumber", {
+                    onChange: (e) => handleDigitInput(e, 10),
+                  })}
+                />
+                {profileErrors.whatsappNumber && (
+                  <p className="text-sm text-danger">
+                    {profileErrors.whatsappNumber.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="profile-youtubeUrl">
+                  YouTube URL{" "}
+                  <span className="font-normal text-muted-foreground">
+                    (optional)
+                  </span>
+                </Label>
+                <Input
+                  id="profile-youtubeUrl"
+                  type="url"
+                  placeholder="https://www.youtube.com/@your-salon"
+                  {...registerProfile("youtubeUrl")}
+                />
+                {profileErrors.youtubeUrl && (
+                  <p className="text-sm text-danger">
+                    {profileErrors.youtubeUrl.message}
                   </p>
                 )}
               </div>

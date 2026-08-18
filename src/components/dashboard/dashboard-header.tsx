@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { LogOut, Menu, ShieldCheck } from "lucide-react";
+import { LogOut, Menu, ShieldCheck, Store } from "lucide-react";
 import { LinkButton } from "@/components/link-button";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -82,9 +83,21 @@ export function DashboardHeader({ salon }: DashboardHeaderProps) {
           <div className="hidden items-center gap-2 sm:flex">
             <Link
               href="/dashboard/profile"
-              className="max-w-[180px] truncate rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium transition-colors hover:bg-muted"
+              className="flex max-w-[220px] items-center gap-2 truncate rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium transition-colors hover:bg-muted"
             >
-              {salon.salonName}
+              <div className="relative flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-muted">
+                {salon.logoUrl ? (
+                  <Image
+                    src={salon.logoUrl}
+                    alt=""
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <Store className="size-3.5 text-muted-foreground" />
+                )}
+              </div>
+              <span className="truncate">{salon.salonName}</span>
             </Link>
             <Button variant="outline" size="sm" onClick={handleLogout}>
               <LogOut className="mr-2 size-4" />

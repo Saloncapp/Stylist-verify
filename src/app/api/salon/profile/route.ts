@@ -3,8 +3,9 @@ import { connectDB } from "@/lib/db";
 import { getSession, toSalonUser } from "@/lib/auth";
 import { profileUpdateSchema } from "@/lib/validations";
 import { jsonError, jsonSuccess, zodErrorResponse } from "@/lib/api";
+import { normalizeOptionalUrl, parseEstablishmentYear } from "@/lib/salon-constants";
+import { salonSnapshotFromSalon, syncSalonDetailsToStylists } from "@/lib/salon-sync";
 import Salon from "@/models/Salon";
-import Stylist from "@/models/Stylist";
 
 export async function GET() {
   try {
@@ -41,8 +42,25 @@ export async function PATCH(request: NextRequest) {
       return zodErrorResponse(parsed.error);
     }
 
-    const { salonName, ownerName, email, staffCount, location, salonNumber } =
-      parsed.data;
+    const {
+      salonName,
+      ownerName,
+      email,
+      staffCount,
+      salonNumber,
+      salonType,
+      logoUrl,
+      salonAddress,
+      googleMapsLocation,
+      websiteUrl,
+      instagramUrl,
+      facebookUrl,
+      whatsappNumber,
+      youtubeUrl,
+      establishmentYear: establishmentYearValue,
+    } = parsed.data;
+
+    const establishmentYear = parseEstablishmentYear(establishmentYearValue);
 
     await connectDB();
 
@@ -63,7 +81,6 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
-    const previousSalonName = salon.salonName;
     const previousEmail = salon.email.toLowerCase();
     const previousSalonNumber = salon.salonNumber ?? "";
     const shouldUnlinkGoogle =
@@ -75,8 +92,17 @@ export async function PATCH(request: NextRequest) {
     salon.ownerName = ownerName;
     salon.email = normalizedEmail;
     salon.staffCount = staffCount;
-    salon.location = location;
     salon.salonNumber = salonNumber;
+    salon.salonType = salonType;
+    salon.logoUrl = logoUrl ?? "";
+    salon.salonAddress = salonAddress?.trim() ?? "";
+    salon.googleMapsLocation = normalizeOptionalUrl(googleMapsLocation);
+    salon.websiteUrl = normalizeOptionalUrl(websiteUrl);
+    salon.instagramUrl = normalizeOptionalUrl(instagramUrl);
+    salon.facebookUrl = normalizeOptionalUrl(facebookUrl);
+    salon.whatsappNumber = whatsappNumber?.trim() ?? "";
+    salon.youtubeUrl = normalizeOptionalUrl(youtubeUrl);
+    salon.establishmentYear = establishmentYear;
 
     if (salonNumber !== previousSalonNumber) {
       salon.salonNumberVerified = false;
@@ -84,18 +110,20 @@ export async function PATCH(request: NextRequest) {
 
     await salon.save();
 
-    // Changing email after Google link requires re-linking with the new Google email
+    if (establishmentYear == null) {
+      await Salon.updateOne(
+        { _id: salon._id },
+        { $unset: { establishmentYear: 1 } }
+      );
+      salon.establishmentYear = undefined;
+    }
+
     if (shouldUnlinkGoogle) {
       await Salon.updateOne({ _id: salon._id }, { $unset: { googleUid: 1 } });
       salon.googleUid = undefined;
     }
 
-    if (previousSalonName !== salonName) {
-      await Stylist.updateMany(
-        { salonId: salon._id },
-        { $set: { salonName } }
-      );
-    }
+    await syncSalonDetailsToStylists(salon._id, salonSnapshotFromSalon(salon));
 
     return jsonSuccess({ salon: toSalonUser(salon) });
   } catch (error) {

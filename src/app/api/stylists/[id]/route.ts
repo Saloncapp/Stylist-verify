@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { statusUpdateSchema } from "@/lib/validations";
 import { jsonError, jsonSuccess, zodErrorResponse } from "@/lib/api";
 import { formatStylist } from "@/lib/formatters";
+import { salonSnapshotFromSalon } from "@/lib/salon-sync";
 import Salon from "@/models/Salon";
 import Stylist from "@/models/Stylist";
 
@@ -87,8 +88,15 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       status,
       remark,
       salonId: salon._id,
-      salonName: salon.salonName,
+      ...salonSnapshotFromSalon(salon),
       level: stylist.level,
+      role: stylist.role,
+      employmentType: stylist.employmentType,
+      performanceSummary: stylist.performanceSummary ?? "",
+      managerFeedback: stylist.managerFeedback ?? "",
+      specialistServices: stylist.specialistServices ?? [],
+      experienceCertificateUrl: stylist.experienceCertificateUrl ?? "",
+      relievingLetterUrl: stylist.relievingLetterUrl ?? "",
       joiningDate: stylist.joiningDate,
       leavingDate:
         status === "Relieved" || status === "Abscond" ? now : undefined,

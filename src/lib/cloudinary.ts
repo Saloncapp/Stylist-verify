@@ -41,4 +41,26 @@ export async function uploadImage(
   return result.secure_url;
 }
 
+export async function uploadDocument(
+  file: Buffer,
+  mimeType: string,
+  folder = "stylist-verify/documents"
+): Promise<string> {
+  ensureCloudinaryConfig();
+
+  const dataUri = `data:${mimeType};base64,${file.toString("base64")}`;
+  const resourceType = mimeType === "application/pdf" ? "raw" : "image";
+
+  const result = await cloudinary.uploader.upload(dataUri, {
+    folder,
+    resource_type: resourceType,
+  });
+
+  if (!result.secure_url) {
+    throw new Error("Cloudinary upload returned no URL");
+  }
+
+  return result.secure_url;
+}
+
 export { cloudinary };

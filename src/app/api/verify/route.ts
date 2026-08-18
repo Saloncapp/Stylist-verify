@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { verifySchema } from "@/lib/validations";
 import { jsonError, jsonSuccess, zodErrorResponse } from "@/lib/api";
 import {
+  buildPublicStylistPreview,
   buildVerifiedStylistFromRecords,
   buildVerifyQuery,
   groupRecordsByAadhaar,
@@ -32,10 +33,15 @@ export async function POST(request: NextRequest) {
       return jsonSuccess({ found: false, stylists: [] });
     }
 
-    const groups = groupRecordsByAadhaar(records);
+    const isAadhaarSearch = Boolean(
+      parsed.data.aadhaarNumber && /^\d{12}$/.test(parsed.data.aadhaarNumber)
+    );
+    const groups = isAadhaarSearch
+      ? [records]
+      : groupRecordsByAadhaar(records);
     const session = await getSession();
 
-    // Logged-out users only learn that a record exists — no PII in the response
+    // Logged-out users get a privacy-safe preview only — no contact, salon, or document data
     if (!session) {
       return jsonSuccess({
         found: true,
@@ -43,6 +49,7 @@ export async function POST(request: NextRequest) {
         count: groups.length,
         multiple: groups.length > 1,
         stylists: [],
+        previews: groups.map(buildPublicStylistPreview),
       });
     }
 

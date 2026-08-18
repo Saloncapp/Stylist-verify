@@ -5,6 +5,7 @@ import { stylistSchema } from "@/lib/validations";
 import { jsonError, jsonSuccess, zodErrorResponse } from "@/lib/api";
 import { hashAadhaar, prepareAadhaarStorage } from "@/lib/aadhaar-crypto";
 import { formatStylist } from "@/lib/formatters";
+import { salonSnapshotFromSalon } from "@/lib/salon-sync";
 import Salon from "@/models/Salon";
 import Stylist from "@/models/Stylist";
 
@@ -80,12 +81,20 @@ export async function POST(request: NextRequest) {
     const { aadhaarEncrypted } = prepareAadhaarStorage(data.aadhaarNumber);
 
     const now = new Date();
+    const salonSnapshot = salonSnapshotFromSalon(salon);
     const historyEntry = {
       status: data.status,
       remark: data.remark,
       salonId: salon._id,
-      salonName: salon.salonName,
+      ...salonSnapshot,
       level: data.level,
+      role: data.role,
+      employmentType: data.employmentType,
+      performanceSummary: "",
+      managerFeedback: "",
+      specialistServices: [] as string[],
+      experienceCertificateUrl: "",
+      relievingLetterUrl: "",
       joiningDate: now,
       leavingDate:
         data.status === "Relieved" || data.status === "Abscond" ? now : undefined,
@@ -94,10 +103,17 @@ export async function POST(request: NextRequest) {
 
     const stylist = await Stylist.create({
       salonId: salon._id,
-      salonName: salon.salonName,
+      ...salonSnapshot,
       name: data.name,
       mobileNumber: data.mobileNumber,
       level: data.level,
+      role: data.role,
+      employmentType: data.employmentType,
+      performanceSummary: "",
+      managerFeedback: "",
+      specialistServices: [],
+      experienceCertificateUrl: "",
+      relievingLetterUrl: "",
       aadhaarHash,
       aadhaarEncrypted,
       address: data.address ?? "",

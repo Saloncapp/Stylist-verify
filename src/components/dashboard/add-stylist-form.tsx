@@ -20,6 +20,10 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ImageCropDialog } from "@/components/dashboard/image-crop-dialog";
 import { stylistSchema, type StylistInput } from "@/lib/validations";
+import {
+  EMPLOYMENT_TYPES,
+  STYLIST_ROLES,
+} from "@/lib/employment-constants";
 import { handleDigitInput } from "@/lib/digit-input";
 import { toast } from "sonner";
 
@@ -40,6 +44,8 @@ export function AddStylistForm() {
     resolver: zodResolver(stylistSchema),
     defaultValues: {
       level: "L1",
+      role: "Stylist",
+      employmentType: "Full-time",
       status: "Active",
       address: "",
       photoUrl: "",
@@ -137,6 +143,64 @@ export function AddStylistForm() {
               {errors.name && (
                 <p className="text-sm text-danger">{errors.name.message}</p>
               )}
+            </div>
+
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Role / Position</Label>
+                <Select
+                  defaultValue="Stylist"
+                  onValueChange={(v) =>
+                    setValue("role", v as StylistInput["role"], {
+                      shouldValidate: true,
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STYLIST_ROLES.map((role) => (
+                      <SelectItem key={role} value={role}>
+                        {role}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.role && (
+                  <p className="text-sm text-danger">{errors.role.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Employment Type</Label>
+                <Select
+                  defaultValue="Full-time"
+                  onValueChange={(v) =>
+                    setValue(
+                      "employmentType",
+                      v as StylistInput["employmentType"],
+                      { shouldValidate: true }
+                    )
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EMPLOYMENT_TYPES.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.employmentType && (
+                  <p className="text-sm text-danger">
+                    {errors.employmentType.message}
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="grid gap-5 sm:grid-cols-2">

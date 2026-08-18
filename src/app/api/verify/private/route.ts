@@ -37,7 +37,12 @@ export async function POST(request: NextRequest) {
       return jsonSuccess({ found: false, stylists: [] });
     }
 
-    const groups = groupRecordsByAadhaar(records);
+    const isAadhaarSearch = Boolean(
+      parsed.data.aadhaarNumber && /^\d{12}$/.test(parsed.data.aadhaarNumber)
+    );
+    const groups = isAadhaarSearch
+      ? [records]
+      : groupRecordsByAadhaar(records);
     const stylists = groups.map(buildPrivateVerifiedStylistFromRecords);
 
     return jsonSuccess({

@@ -23,6 +23,8 @@ export async function POST(request: NextRequest) {
       staffCount,
       location,
       salonNumber,
+      salonType,
+      logoUrl,
     } = parsed.data;
 
     await connectDB();
@@ -43,6 +45,8 @@ export async function POST(request: NextRequest) {
       staffCount,
       location,
       salonNumber,
+      salonType,
+      logoUrl: logoUrl ?? "",
     });
 
     const token = await createSession({
