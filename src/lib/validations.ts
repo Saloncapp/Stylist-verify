@@ -94,7 +94,7 @@ export const verifyPhoneSchema = z.object({
     .regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit Indian mobile number"),
 });
 
-export const stylistSchema = z
+const stylistBaseSchema = z
   .object({
     name: z.string().min(2, "Name must be at least 2 characters"),
     mobileNumber: z
@@ -110,8 +110,25 @@ export const stylistSchema = z
     photoUrl: z.union([z.string().url("Invalid photo URL"), z.literal("")]),
     status: z.enum(["Active", "Relieved", "Abscond"]),
     remark: z.string().optional(),
-  })
-  .superRefine((data, ctx) => {
+  });
+
+export const stylistSchema = stylistBaseSchema.superRefine((data, ctx) => {
+  if (
+    (data.status === "Relieved" || data.status === "Abscond") &&
+    (!data.remark || data.remark.trim().length < 5)
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Remark is required (minimum 5 characters)",
+      path: ["remark"],
+    });
+  }
+});
+
+/** Remark required only when status changes to Relieved or Abscond. */
+export function createStylistProfileUpdateSchema(currentStatus: string) {
+  return stylistBaseSchema.superRefine((data, ctx) => {
+    if (data.status === currentStatus) return;
     if (
       (data.status === "Relieved" || data.status === "Abscond") &&
       (!data.remark || data.remark.trim().length < 5)
@@ -123,6 +140,7 @@ export const stylistSchema = z
       });
     }
   });
+}
 
 export const performanceUpdateSchema = z.object({
   overallExperienceRating: performanceRatingSchema,

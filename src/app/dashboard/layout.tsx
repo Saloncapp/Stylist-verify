@@ -1,17 +1,19 @@
 import { redirect } from "next/navigation";
 import { connectDB } from "@/lib/db";
-import { getSession, toSalonUser } from "@/lib/auth";
+import { clearSessionCookie, getSession, toSalonUser } from "@/lib/auth";
 import Salon from "@/models/Salon";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import type { SalonUser } from "@/types";
 
-async function getSalonUser(): Promise<SalonUser | null> {
+async function getSalonUser(): Promise<
+  SalonUser | "unauthenticated" | "invalid"
+> {
   const session = await getSession();
-  if (!session) return null;
+  if (!session) return "unauthenticated";
 
   await connectDB();
   const salon = await Salon.findById(session.salonId).select("-password");
-  if (!salon) return null;
+  if (!salon) return "invalid";
 
   return toSalonUser(salon);
 }
@@ -23,7 +25,12 @@ export default async function DashboardLayout({
 }) {
   const salon = await getSalonUser();
 
-  if (!salon) {
+  if (salon === "unauthenticated") {
+    redirect("/login");
+  }
+
+  if (salon === "invalid") {
+    await clearSessionCookie();
     redirect("/login");
   }
 

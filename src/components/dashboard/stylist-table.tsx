@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import Image from "next/image";
-import { ClipboardPen, Eye, FileText } from "lucide-react";
+import { ClipboardPen, Eye, FileText, Pencil } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LinkButton } from "@/components/link-button";
@@ -12,12 +13,21 @@ import { StylistDocumentsDialog } from "@/components/dashboard/stylist-documents
 import { hasPerformanceInfo } from "@/lib/formatters";
 import type { StylistRecord } from "@/types";
 
+const StylistEditDialog = dynamic(
+  () =>
+    import("@/components/dashboard/stylist-edit-dialog").then(
+      (mod) => mod.StylistEditDialog
+    ),
+  { ssr: false }
+);
+
 export function StylistTable({ stylists }: { stylists: StylistRecord[] }) {
   const [rows, setRows] = useState(stylists);
   const [performanceStylist, setPerformanceStylist] =
     useState<StylistRecord | null>(null);
   const [documentsStylist, setDocumentsStylist] =
     useState<StylistRecord | null>(null);
+  const [editStylist, setEditStylist] = useState<StylistRecord | null>(null);
 
   useEffect(() => {
     setRows(stylists);
@@ -86,7 +96,7 @@ export function StylistTable({ stylists }: { stylists: StylistRecord[] }) {
                         <StatusBadge status={stylist.status} />
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-1">
+                        <div className="flex flex-wrap items-center justify-end gap-1">
                           <Button
                             type="button"
                             variant="ghost"
@@ -115,6 +125,15 @@ export function StylistTable({ stylists }: { stylists: StylistRecord[] }) {
                             <Eye className="mr-1 size-4" />
                             View
                           </LinkButton>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditStylist(stylist)}
+                          >
+                            <Pencil className="mr-1 size-4" />
+                            Edit
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -126,6 +145,21 @@ export function StylistTable({ stylists }: { stylists: StylistRecord[] }) {
         </CardContent>
       </Card>
 
+      {editStylist && (
+        <StylistEditDialog
+          stylist={editStylist}
+          open={Boolean(editStylist)}
+          onOpenChange={(open) => {
+            if (!open) setEditStylist(null);
+          }}
+          onSaved={(updated) => {
+            setRows((prev) =>
+              prev.map((row) => (row.id === updated.id ? updated : row))
+            );
+            setEditStylist(null);
+          }}
+        />
+      )}
       {performanceStylist && (
         <StylistPerformanceDialog
           stylist={performanceStylist}

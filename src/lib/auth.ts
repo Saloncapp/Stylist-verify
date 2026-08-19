@@ -29,8 +29,13 @@ export async function verifySession(
 ): Promise<SessionPayload | null> {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
-    return payload as unknown as SessionPayload;
+    const salonId =
+      typeof payload.salonId === "string" ? payload.salonId : "";
+    const email = typeof payload.email === "string" ? payload.email : "";
+    if (!salonId || !email) return null;
+    return { salonId, email };
   } catch {
+    // Expired, tampered, or otherwise invalid tokens are treated as logged out
     return null;
   }
 }
