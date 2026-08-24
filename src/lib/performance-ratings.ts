@@ -55,7 +55,25 @@ export function hasPerformanceRatings(input: PerformanceRatingFields): boolean {
     isValidPerformanceRating(input.overallExperienceRating) ||
       isValidPerformanceRating(input.technicalSkillRating) ||
       isValidPerformanceRating(input.customerHandlingRating) ||
-      (input.overallPerformanceRating != null && input.overallPerformanceRating > 0)
+      (input.overallPerformanceRating != null &&
+        input.overallPerformanceRating > 0)
+  );
+}
+
+export function hasPerformanceInfo(input: {
+  performanceSummary?: string;
+  managerFeedback?: string;
+  specialistServices?: string[];
+  overallExperienceRating?: number;
+  technicalSkillRating?: number;
+  customerHandlingRating?: number;
+  overallPerformanceRating?: number;
+}): boolean {
+  return Boolean(
+    (input.performanceSummary && input.performanceSummary.trim()) ||
+      (input.managerFeedback && input.managerFeedback.trim()) ||
+      (input.specialistServices && input.specialistServices.length > 0) ||
+      hasPerformanceRatings(input)
   );
 }
 

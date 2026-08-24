@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "build:lgd-locations": "node scripts/build-lgd-locations.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

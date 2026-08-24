@@ -1,4 +1,6 @@
 import mongoose from "mongoose";
+import { unifyStylistProfiles } from "@/lib/stylist-merge";
+import { ensureHiringIndexes } from "@/lib/hiring";
 
 interface MongooseCache {
   conn: typeof mongoose | null;
@@ -30,9 +32,12 @@ export async function connectDB(): Promise<typeof mongoose> {
   if (!cached.promise) {
     cached.promise = mongoose.connect(uri, {
       bufferCommands: false,
+      autoIndex: false,
     });
   }
 
   cached.conn = await cached.promise;
+  await unifyStylistProfiles();
+  await ensureHiringIndexes();
   return cached.conn;
 }

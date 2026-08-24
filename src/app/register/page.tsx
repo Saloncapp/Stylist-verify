@@ -1,18 +1,6 @@
-import type { Metadata } from "next";
-import { Navbar } from "@/components/layout/navbar";
-import { RegisterForm } from "@/components/auth/register-form";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Register",
-};
-
+/** Legacy route — registration is inline on the home Continue-with-Mobile card. */
 export default function RegisterPage() {
-  return (
-    <>
-      <Navbar variant="auth" />
-      <main className="flex flex-1 items-center justify-center px-4 py-12">
-        <RegisterForm />
-      </main>
-    </>
-  );
+  redirect("/");
 }

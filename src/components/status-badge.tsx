@@ -12,9 +12,17 @@ export function StatusBadge({
   status,
   className,
 }: {
-  status: StylistStatus;
+  status?: StylistStatus;
   className?: string;
 }) {
+  if (!status) {
+    return (
+      <Badge variant="outline" className={cn("font-medium", className)}>
+        —
+      </Badge>
+    );
+  }
+
   return (
     <Badge
       variant="outline"

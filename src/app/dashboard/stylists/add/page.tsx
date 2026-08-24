@@ -1,20 +1,6 @@
-import type { Metadata } from "next";
-import { AddStylistForm } from "@/components/dashboard/add-stylist-form";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Add Stylist",
-};
-
+/** Legacy route — add stylist now opens as a modal from the dashboard. */
 export default function AddStylistPage() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Add Stylist</h1>
-        <p className="text-muted-foreground">
-          Register a new stylist to your salon records
-        </p>
-      </div>
-      <AddStylistForm />
-    </div>
-  );
+  redirect("/dashboard?add=1");
 }

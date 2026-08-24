@@ -1,23 +1,16 @@
 import mongoose, { Schema, type Document, type Model } from "mongoose";
 import type { SalonType } from "@/lib/salon-constants";
 
-export type AuthProvider = "email" | "google";
-
 export interface ISalon extends Document {
   salonName: string;
-  ownerName: string;
-  email: string;
-  password?: string;
-  authProvider: AuthProvider;
-  googleUid?: string;
-  staffCount: number;
-  location: string;
-  /** Salon contact phone — optional for legacy records, required on new registration */
-  salonNumber?: string;
-  salonNumberVerified: boolean;
+  ownerName?: string;
+  email?: string;
+  staffCount?: number;
+  salonNumber: string;
+  salonAddress: string;
+  firebaseUid?: string;
   logoUrl?: string;
   salonType: SalonType;
-  salonAddress?: string;
   googleMapsLocation?: string;
   websiteUrl?: string;
   instagramUrl?: string;
@@ -32,26 +25,23 @@ export interface ISalon extends Document {
 const SalonSchema = new Schema<ISalon>(
   {
     salonName: { type: String, required: true, trim: true },
-    ownerName: { type: String, required: true, trim: true },
-    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    password: { type: String },
-    authProvider: {
+    ownerName: { type: String, trim: true, default: "" },
+    email: { type: String, lowercase: true, trim: true },
+    staffCount: { type: Number, min: 1 },
+    salonNumber: {
       type: String,
-      enum: ["email", "google"],
-      default: "email",
+      required: true,
+      trim: true,
+      unique: true,
     },
-    googleUid: { type: String, sparse: true, unique: true },
-    staffCount: { type: Number, required: true, min: 1 },
-    location: { type: String, required: true, trim: true },
-    salonNumber: { type: String, trim: true },
-    salonNumberVerified: { type: Boolean, default: false },
+    salonAddress: { type: String, required: true, trim: true },
+    firebaseUid: { type: String, sparse: true, unique: true },
     logoUrl: { type: String, default: "" },
     salonType: {
       type: String,
       enum: ["Unisex", "Men", "Women"],
       default: "Unisex",
     },
-    salonAddress: { type: String, default: "" },
     googleMapsLocation: { type: String, default: "" },
     websiteUrl: { type: String, default: "" },
     instagramUrl: { type: String, default: "" },

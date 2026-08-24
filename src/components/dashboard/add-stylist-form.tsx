@@ -22,7 +22,20 @@ export function AddStylistForm() {
         return;
       }
 
-      toast.success("Stylist added successfully");
+      const employeeId = result.data?.stylist?.employeeId as string | undefined;
+      if (result.data?.linked) {
+        toast.success(
+          employeeId
+            ? `Employment added to existing profile ${employeeId}`
+            : "Employment added to existing stylist profile"
+        );
+      } else {
+        toast.success(
+          employeeId
+            ? `Stylist added successfully (${employeeId})`
+            : "Stylist added successfully"
+        );
+      }
       router.push("/dashboard");
       router.refresh();
     } catch {
@@ -33,8 +46,9 @@ export function AddStylistForm() {
   return (
     <StylistProfileForm
       variant="page"
+      mode="create"
       title="Add New Stylist"
-      submitLabel="Add Stylist"
+      submitLabel="Create stylist profile"
       onSubmit={onSubmit}
     />
   );

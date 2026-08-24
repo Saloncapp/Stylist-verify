@@ -4,16 +4,13 @@ import {
   maskAadhaar,
 } from "@/lib/aadhaar-crypto";
 import { DEFAULT_SALON_TYPE } from "@/lib/salon-constants";
-import {
-  DEFAULT_EMPLOYMENT_TYPE,
-  DEFAULT_STYLIST_ROLE,
-} from "@/lib/employment-constants";
 import { maskMobileNumber, maskStylistDisplayName } from "@/lib/mask";
 import { formatPreviewExperience } from "@/lib/employment-duration";
 import {
   calculateCareerPerformanceRating,
   calculateOverallPerformanceRating,
 } from "@/lib/performance-ratings";
+import { getEntrySalonSnapshot } from "@/lib/salon-snapshot";
 import type { IStylist } from "@/models/Stylist";
 import type {
   PublicStylistPreview,
@@ -26,222 +23,105 @@ import type {
 
 export interface VerifiedStylist {
   name: string;
+  employeeId?: string;
   maskedMobile: string;
   maskedAadhaar: string;
-  level: StylistLevel;
-  status: StylistStatus;
+  level?: StylistLevel;
+  status?: StylistStatus;
   photoUrl: string;
   employmentHistory: VerificationEmploymentEntry[];
 }
 
-function sortByJoiningDate(records: IStylist[]): IStylist[] {
-  return [...records].sort(
-    (a, b) =>
-      new Date(a.joiningDate).getTime() - new Date(b.joiningDate).getTime()
+function entryTime(entry: {
+  joiningDate?: Date;
+  updatedAt: Date;
+}): number {
+  return new Date(entry.joiningDate ?? entry.updatedAt).getTime();
+}
+
+function sortHistory(stylist: IStylist) {
+  return [...stylist.employmentHistory].sort(
+    (a, b) => entryTime(a) - entryTime(b)
   );
 }
 
-function getDisplayMeta(records: IStylist[]) {
-  const sorted = sortByJoiningDate(records);
-  const latest = sorted[sorted.length - 1];
-  const activeRecord =
-    [...sorted].reverse().find((r) => r.status === "Active") ?? latest;
-
-  const uniqueNames = [...new Set(sorted.map((r) => r.name))];
-  const displayName =
-    uniqueNames.length > 1
-      ? `${uniqueNames[0]} (+${uniqueNames.length - 1} other name${uniqueNames.length > 2 ? "s" : ""})`
-      : latest.name;
-
-  return { sorted, latest, activeRecord, displayName };
+function getActiveEntry(stylist: IStylist) {
+  const history = sortHistory(stylist);
+  return (
+    [...history].reverse().find((entry) => entry.status === "Active") ??
+    history[history.length - 1]
+  );
 }
 
-function getLatestHistory(record: IStylist) {
-  return record.employmentHistory.length > 0
-    ? record.employmentHistory[record.employmentHistory.length - 1]
-    : undefined;
-}
-
-function pickSalonField(
-  recordValue?: string,
-  historyValue?: string
-): string | undefined {
-  return recordValue || historyValue || undefined;
-}
-
-function pickPerformanceNumber(
-  recordValue?: number,
-  historyValue?: number
-): number | undefined {
-  return recordValue ?? historyValue ?? undefined;
-}
-
-function pickPerformanceFields(record: IStylist) {
-  const latestHistory = getLatestHistory(record);
-
-  return {
-    performanceSummary: pickSalonField(
-      record.performanceSummary,
-      latestHistory?.performanceSummary
-    ),
-    managerFeedback: pickSalonField(
-      record.managerFeedback,
-      latestHistory?.managerFeedback
-    ),
-    overallExperienceRating: pickPerformanceNumber(
-      record.overallExperienceRating,
-      latestHistory?.overallExperienceRating
-    ),
-    technicalSkillRating: pickPerformanceNumber(
-      record.technicalSkillRating,
-      latestHistory?.technicalSkillRating
-    ),
-    customerHandlingRating: pickPerformanceNumber(
-      record.customerHandlingRating,
-      latestHistory?.customerHandlingRating
-    ),
-    overallPerformanceRating: pickPerformanceNumber(
-      record.overallPerformanceRating,
-      latestHistory?.overallPerformanceRating
-    ),
-    specialistServices: record.specialistServices?.length
-      ? record.specialistServices
-      : latestHistory?.specialistServices?.length
-        ? latestHistory.specialistServices
-        : undefined,
-  };
-}
-
-function pickSalonIdentityFields(record: IStylist) {
-  const latestHistory = getLatestHistory(record);
-
-  return {
-    salonAddress: pickSalonField(
-      record.salonAddress,
-      latestHistory?.salonAddress
-    ),
-    salonEmail: pickSalonField(record.salonEmail, latestHistory?.salonEmail),
-    salonNumber: pickSalonField(record.salonNumber, latestHistory?.salonNumber),
-    googleMapsLocation: pickSalonField(
-      record.googleMapsLocation,
-      latestHistory?.googleMapsLocation
-    ),
-    websiteUrl: pickSalonField(record.websiteUrl, latestHistory?.websiteUrl),
-    instagramUrl: pickSalonField(
-      record.instagramUrl,
-      latestHistory?.instagramUrl
-    ),
-    facebookUrl: pickSalonField(record.facebookUrl, latestHistory?.facebookUrl),
-    whatsappNumber: pickSalonField(
-      record.whatsappNumber,
-      latestHistory?.whatsappNumber
-    ),
-    youtubeUrl: pickSalonField(record.youtubeUrl, latestHistory?.youtubeUrl),
-    establishmentYear:
-      record.establishmentYear || latestHistory?.establishmentYear || undefined,
-  };
-}
-
-/** One employment entry per salon enrollment, using that salon's registered details */
-function buildSalonEmploymentEntry(
-  record: IStylist
+function historyToPublicEmployment(
+  record: IStylist,
+  entry: IStylist["employmentHistory"][number]
 ): VerificationEmploymentEntry {
-  const latestHistory = getLatestHistory(record);
-  const salonFields = pickSalonIdentityFields(record);
-  const performanceFields = pickPerformanceFields(record);
+  const snapshot = getEntrySalonSnapshot(
+    entry as IStylist["employmentHistory"][number] & Record<string, unknown>
+  );
   const overallPerformanceRating =
-    performanceFields.overallPerformanceRating ??
+    entry.overallPerformanceRating ??
     calculateOverallPerformanceRating({
-      overallExperienceRating: performanceFields.overallExperienceRating,
-      technicalSkillRating: performanceFields.technicalSkillRating,
-      customerHandlingRating: performanceFields.customerHandlingRating,
+      overallExperienceRating: entry.overallExperienceRating,
+      technicalSkillRating: entry.technicalSkillRating,
+      customerHandlingRating: entry.customerHandlingRating,
     });
 
   return {
-    status: record.status,
-    remark: latestHistory?.remark,
-    salonId: record.salonId.toString(),
-    salonName: record.salonName,
-    salonLogoUrl: record.salonLogoUrl || undefined,
-    salonType: record.salonType ?? DEFAULT_SALON_TYPE,
-    ...salonFields,
-    level: record.level,
-    role: record.role ?? DEFAULT_STYLIST_ROLE,
-    employmentType: record.employmentType ?? DEFAULT_EMPLOYMENT_TYPE,
-    performanceSummary: performanceFields.performanceSummary,
-    managerFeedback: performanceFields.managerFeedback,
-    overallExperienceRating: performanceFields.overallExperienceRating,
-    technicalSkillRating: performanceFields.technicalSkillRating,
-    customerHandlingRating: performanceFields.customerHandlingRating,
+    employeeId: record.employeeId || undefined,
+    status: entry.status,
+    remark: entry.remark,
+    salonId: entry.salonId.toString(),
+    salonName: snapshot.salonName,
+    salonLogoUrl: snapshot.salonLogoUrl || undefined,
+    salonType: snapshot.salonType ?? DEFAULT_SALON_TYPE,
+    salonAddress: snapshot.salonAddress || undefined,
+    salonEmail: snapshot.salonEmail || undefined,
+    salonNumber: snapshot.salonNumber || undefined,
+    googleMapsLocation: snapshot.googleMapsLocation || undefined,
+    websiteUrl: snapshot.websiteUrl || undefined,
+    instagramUrl: snapshot.instagramUrl || undefined,
+    facebookUrl: snapshot.facebookUrl || undefined,
+    whatsappNumber: snapshot.whatsappNumber || undefined,
+    youtubeUrl: snapshot.youtubeUrl || undefined,
+    establishmentYear: snapshot.establishmentYear || undefined,
+    level: entry.level,
+    role: entry.role,
+    employmentType: entry.employmentType,
+    performanceSummary: entry.performanceSummary || undefined,
+    managerFeedback: entry.managerFeedback || undefined,
+    overallExperienceRating: entry.overallExperienceRating || undefined,
+    technicalSkillRating: entry.technicalSkillRating || undefined,
+    customerHandlingRating: entry.customerHandlingRating || undefined,
     overallPerformanceRating,
-    specialistServices: performanceFields.specialistServices,
-    experienceCertificateUrl:
-      record.experienceCertificateUrl ||
-      latestHistory?.experienceCertificateUrl ||
-      undefined,
-    relievingLetterUrl:
-      record.relievingLetterUrl ||
-      latestHistory?.relievingLetterUrl ||
-      undefined,
-    joiningDate: record.joiningDate.toISOString(),
-    leavingDate: record.leavingDate?.toISOString(),
-    updatedAt: record.updatedAt.toISOString(),
+    specialistServices: entry.specialistServices?.length
+      ? entry.specialistServices
+      : undefined,
+    experienceCertificateUrl: entry.experienceCertificateUrl || undefined,
+    relievingLetterUrl: entry.relievingLetterUrl || undefined,
+    joiningDate: entry.joiningDate?.toISOString(),
+    leavingDate: entry.leavingDate?.toISOString(),
+    updatedAt: entry.updatedAt.toISOString(),
     stylistName: record.name,
     maskedMobile: maskMobileNumber(record.mobileNumber),
   };
 }
 
-function buildPrivateSalonEmploymentEntry(
-  record: IStylist
+function historyToPrivateEmployment(
+  record: IStylist,
+  entry: IStylist["employmentHistory"][number]
 ): VerificationEmploymentPrivateEntry {
-  const latestHistory = getLatestHistory(record);
-  const salonFields = pickSalonIdentityFields(record);
-  const performanceFields = pickPerformanceFields(record);
-  const overallPerformanceRating =
-    performanceFields.overallPerformanceRating ??
-    calculateOverallPerformanceRating({
-      overallExperienceRating: performanceFields.overallExperienceRating,
-      technicalSkillRating: performanceFields.technicalSkillRating,
-      customerHandlingRating: performanceFields.customerHandlingRating,
-    });
-
   return {
-    status: record.status,
-    remark: latestHistory?.remark,
-    salonId: record.salonId.toString(),
-    salonName: record.salonName,
-    salonLogoUrl: record.salonLogoUrl || undefined,
-    salonType: record.salonType ?? DEFAULT_SALON_TYPE,
-    ...salonFields,
-    level: record.level,
-    role: record.role ?? DEFAULT_STYLIST_ROLE,
-    employmentType: record.employmentType ?? DEFAULT_EMPLOYMENT_TYPE,
-    performanceSummary: performanceFields.performanceSummary,
-    managerFeedback: performanceFields.managerFeedback,
-    overallExperienceRating: performanceFields.overallExperienceRating,
-    technicalSkillRating: performanceFields.technicalSkillRating,
-    customerHandlingRating: performanceFields.customerHandlingRating,
-    overallPerformanceRating,
-    specialistServices: performanceFields.specialistServices,
-    experienceCertificateUrl:
-      record.experienceCertificateUrl ||
-      latestHistory?.experienceCertificateUrl ||
-      undefined,
-    relievingLetterUrl:
-      record.relievingLetterUrl ||
-      latestHistory?.relievingLetterUrl ||
-      undefined,
-    joiningDate: record.joiningDate.toISOString(),
-    leavingDate: record.leavingDate?.toISOString(),
-    updatedAt: record.updatedAt.toISOString(),
+    ...historyToPublicEmployment(record, entry),
     stylistName: record.name,
     mobileNumber: record.mobileNumber,
   };
 }
 
-function collapseBySalon<T extends { salonId: string; joiningDate?: string; updatedAt: string }>(
-  entries: T[]
-): T[] {
+function collapseBySalon<
+  T extends { salonId: string; joiningDate?: string; updatedAt: string },
+>(entries: T[]): T[] {
   const bySalon = new Map<string, T>();
 
   for (const entry of entries) {
@@ -251,11 +131,11 @@ function collapseBySalon<T extends { salonId: string; joiningDate?: string; upda
       continue;
     }
 
-    const entryTime = new Date(entry.joiningDate ?? entry.updatedAt).getTime();
-    const existingTime = new Date(
+    const entryTimeValue = new Date(entry.joiningDate ?? entry.updatedAt).getTime();
+    const existingTimeValue = new Date(
       existing.joiningDate ?? existing.updatedAt
     ).getTime();
-    if (entryTime >= existingTime) {
+    if (entryTimeValue >= existingTimeValue) {
       bySalon.set(entry.salonId, entry);
     }
   }
@@ -270,16 +150,22 @@ function collapseBySalon<T extends { salonId: string; joiningDate?: string; upda
 function buildEmploymentHistory(
   records: IStylist[]
 ): VerificationEmploymentEntry[] {
-  return collapseBySalon(records.map(buildSalonEmploymentEntry));
+  const entries = records.flatMap((record) =>
+    sortHistory(record).map((entry) => historyToPublicEmployment(record, entry))
+  );
+  return collapseBySalon(entries);
 }
 
 function buildPrivateEmploymentHistory(
   records: IStylist[]
 ): VerificationEmploymentPrivateEntry[] {
-  return collapseBySalon(records.map(buildPrivateSalonEmploymentEntry));
+  const entries = records.flatMap((record) =>
+    sortHistory(record).map((entry) => historyToPrivateEmployment(record, entry))
+  );
+  return collapseBySalon(entries);
 }
 
-/** Group salon employment records by person (same Aadhaar across salons) */
+/** Group stylist records by person (legacy safety during migration) */
 export function groupRecordsByAadhaar(records: IStylist[]): IStylist[][] {
   const map = new Map<string, IStylist[]>();
 
@@ -290,12 +176,7 @@ export function groupRecordsByAadhaar(records: IStylist[]): IStylist[][] {
     map.set(key, group);
   }
 
-  return Array.from(map.values()).map((group) =>
-    group.sort(
-      (a, b) =>
-        new Date(a.joiningDate).getTime() - new Date(b.joiningDate).getTime()
-    )
-  );
+  return Array.from(map.values());
 }
 
 function getStablePersonKey(record: IStylist): string {
@@ -303,7 +184,7 @@ function getStablePersonKey(record: IStylist): string {
     const digits = getAadhaarFromRecord(record).replace(/\D/g, "");
     if (digits.length === 12) return digits;
   } catch {
-    // fall through to hash / id
+    // fall through
   }
 
   const hash = record.aadhaarHash?.trim();
@@ -334,38 +215,45 @@ export function buildVerifyQuery(input: {
 export function buildPublicStylistPreview(
   records: IStylist[]
 ): PublicStylistPreview {
-  const { sorted, activeRecord, latest } = getDisplayMeta(records);
-  const uniqueSalonCount = new Set(
-    sorted.map((record) => record.salonId.toString())
-  ).size;
-  const role = activeRecord.role ?? DEFAULT_STYLIST_ROLE;
-  const publicRole = role === "Stylist" ? "Professional Stylist" : role;
+  const stylist = records[0];
+  const history = buildEmploymentHistory(records);
+  const uniqueSalonCount = new Set(history.map((entry) => entry.salonId)).size;
+  const activeHistory =
+    history.find((entry) => entry.status === "Active") ?? history[0];
+  const activeEntry = stylist ? getActiveEntry(stylist) : undefined;
+  const role = activeHistory?.role ?? activeEntry?.role;
+  const publicRole =
+    role === "Stylist" ? "Professional Stylist" : role ?? "Professional Stylist";
 
   return {
-    displayName: maskStylistDisplayName(latest.name),
+    displayName: maskStylistDisplayName(stylist?.name ?? "Stylist"),
     role: publicRole,
-    experienceLabel: formatPreviewExperience(sorted),
-    employmentCount: uniqueSalonCount,
-    performanceRating: calculateCareerPerformanceRating(sorted),
+    experienceLabel: formatPreviewExperience(history),
+    employmentCount: uniqueSalonCount || records.length,
+    performanceRating: calculateCareerPerformanceRating(history),
   };
 }
 
-/** Build one verification result from all salon records for the same person */
+/** Build one verification result from stylist profile(s) */
 export function buildVerifiedStylistFromRecords(
   records: IStylist[]
 ): VerifiedStylist {
-  const { sorted, latest, activeRecord, displayName } =
-    getDisplayMeta(records);
-  const aadhaarPlain = getAadhaarFromRecord(latest);
+  const stylist = records[records.length - 1];
+  const aadhaarPlain = getAadhaarFromRecord(stylist);
+  const history = buildEmploymentHistory(records);
+  const activeHistory =
+    history.find((entry) => entry.status === "Active") ?? history[0];
+  const activeEntry = getActiveEntry(stylist);
 
   return {
-    name: displayName,
-    maskedMobile: maskMobileNumber(latest.mobileNumber),
+    name: stylist.name,
+    employeeId: stylist.employeeId || undefined,
+    maskedMobile: maskMobileNumber(stylist.mobileNumber),
     maskedAadhaar: maskAadhaar(aadhaarPlain),
-    level: activeRecord.level,
-    status: activeRecord.status,
-    photoUrl: latest.photoUrl ?? "",
-    employmentHistory: buildEmploymentHistory(sorted),
+    level: activeHistory?.level ?? activeEntry?.level,
+    status: activeHistory?.status ?? activeEntry?.status,
+    photoUrl: stylist.photoUrl ?? "",
+    employmentHistory: history,
   };
 }
 
@@ -373,18 +261,22 @@ export function buildVerifiedStylistFromRecords(
 export function buildPrivateVerifiedStylistFromRecords(
   records: IStylist[]
 ): VerifiedStylistPrivateResult {
-  const { sorted, latest, activeRecord, displayName } =
-    getDisplayMeta(records);
-  const aadhaarPlain = getAadhaarFromRecord(latest);
+  const stylist = records[records.length - 1];
+  const aadhaarPlain = getAadhaarFromRecord(stylist);
+  const history = buildPrivateEmploymentHistory(records);
+  const activeHistory =
+    history.find((entry) => entry.status === "Active") ?? history[0];
+  const activeEntry = getActiveEntry(stylist);
 
   return {
-    name: displayName,
-    mobileNumber: latest.mobileNumber,
+    name: stylist.name,
+    employeeId: stylist.employeeId || undefined,
+    mobileNumber: stylist.mobileNumber,
     aadhaarMasked: maskAadhaar(aadhaarPlain),
-    address: latest.address ?? "",
-    level: activeRecord.level,
-    status: activeRecord.status,
-    photoUrl: latest.photoUrl ?? "",
-    employmentHistory: buildPrivateEmploymentHistory(sorted),
+    address: stylist.address ?? "",
+    level: activeHistory?.level ?? activeEntry?.level ?? "L1",
+    status: activeHistory?.status ?? activeEntry?.status ?? "Active",
+    photoUrl: stylist.photoUrl ?? "",
+    employmentHistory: history,
   };
 }

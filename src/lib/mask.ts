@@ -1,8 +1,8 @@
-/** Mask the last 5 digits of a 10-digit mobile number, e.g. 9876543210 → 98765***** */
+/** Mask mobile for browse contexts, e.g. 9876543210 → ******3210 */
 export function maskMobileNumber(mobile: string): string {
   const digits = mobile.replace(/\D/g, "");
-  if (digits.length <= 5) return digits;
-  return digits.slice(0, 5) + "*".repeat(digits.length - 5);
+  if (digits.length <= 4) return "*".repeat(digits.length);
+  return "*".repeat(digits.length - 4) + digits.slice(-4);
 }
 
 /** Public preview name: first name + last initial, e.g. Priya Kumar → Priya K. */

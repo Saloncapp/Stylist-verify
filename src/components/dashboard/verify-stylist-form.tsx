@@ -11,7 +11,7 @@ import {
   StylistSearchCard,
   type StylistSearchType,
 } from "@/components/verify/stylist-search-card";
-import { verifySchema, type VerifyInput } from "@/lib/validations";
+import { verifyFormSchema, type VerifyFormInput } from "@/lib/validations";
 import { handleDigitInput } from "@/lib/digit-input";
 import type { VerifiedStylistPrivateResult } from "@/types";
 import { toast } from "sonner";
@@ -30,6 +30,7 @@ function PrivateStylistResultCard({
   return (
     <VerifiedStylistView
       name={stylist.name}
+      employeeId={stylist.employeeId}
       photoUrl={stylist.photoUrl}
       status={stylist.status}
       mobile={stylist.mobileNumber}
@@ -40,34 +41,32 @@ function PrivateStylistResultCard({
   );
 }
 
-export function VerifyStylistForm() {
+export function VerifyStylistForm({ embedded = false }: { embedded?: boolean }) {
   const [result, setResult] = useState<PrivateVerifyResult | null>(null);
   const [searched, setSearched] = useState(false);
-  const [searchType, setSearchType] = useState<StylistSearchType>("mobile");
 
   const {
     register,
     handleSubmit,
-    reset,
+    setValue,
     watch,
+    clearErrors,
     formState: { errors, isSubmitting },
-  } = useForm<VerifyInput>({
-    resolver: zodResolver(verifySchema),
+  } = useForm<VerifyFormInput>({
+    resolver: zodResolver(verifyFormSchema),
+    defaultValues: {
+      searchType: "aadhaar",
+      aadhaarNumber: "",
+      mobileNumber: "",
+    },
   });
 
-  const aadhaarValue = watch("aadhaarNumber") ?? "";
-  const mobileValue = watch("mobileNumber") ?? "";
-  const inputLength =
-    searchType === "aadhaar" ? aadhaarValue.length : mobileValue.length;
-  const errorMessage =
-    searchType === "aadhaar"
-      ? errors.aadhaarNumber?.message
-      : errors.mobileNumber?.message;
+  const searchType = watch("searchType");
 
-  async function onSubmit(data: VerifyInput) {
+  async function onSubmit(data: VerifyFormInput) {
     try {
       const payload =
-        searchType === "aadhaar"
+        data.searchType === "aadhaar"
           ? { aadhaarNumber: data.aadhaarNumber }
           : { mobileNumber: data.mobileNumber };
 
@@ -92,31 +91,32 @@ export function VerifyStylistForm() {
   }
 
   function handleSearchTypeChange(value: StylistSearchType) {
-    setSearchType(value);
-    reset();
+    setValue("searchType", value, { shouldValidate: false });
+    clearErrors(["aadhaarNumber", "mobileNumber"]);
     setResult(null);
     setSearched(false);
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8">
+    <div
+      className={
+        embedded ? "space-y-6" : "mx-auto max-w-2xl space-y-8"
+      }
+    >
       <StylistSearchCard
         searchType={searchType}
         onSearchTypeChange={handleSearchTypeChange}
         onSubmit={handleSubmit(onSubmit)}
         isSubmitting={isSubmitting}
-        inputLength={inputLength}
-        errorMessage={errorMessage}
         idPrefix="dashboard-"
-        inputProps={
-          searchType === "aadhaar"
-            ? register("aadhaarNumber", {
-                onChange: (e) => handleDigitInput(e, 12),
-              })
-            : register("mobileNumber", {
-                onChange: (e) => handleDigitInput(e, 10),
-              })
-        }
+        aadhaarError={errors.aadhaarNumber?.message}
+        mobileError={errors.mobileNumber?.message}
+        aadhaarInputProps={register("aadhaarNumber", {
+          onChange: (e) => handleDigitInput(e, 12),
+        })}
+        mobileInputProps={register("mobileNumber", {
+          onChange: (e) => handleDigitInput(e, 10),
+        })}
       />
 
       {searched && result && !result.found && (

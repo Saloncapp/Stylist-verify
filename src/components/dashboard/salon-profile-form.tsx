@@ -1,21 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  ConfirmationResult,
-  signInWithPhoneNumber,
-  signInWithPopup,
-} from "firebase/auth";
-import { CheckCircle2, Loader2, Store, Upload } from "lucide-react";
+import { Loader2, Store, Upload } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { PasswordInput } from "@/components/ui/password-input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -24,51 +18,38 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ImageCropDialog } from "@/components/dashboard/image-crop-dialog";
 import { SalonTypeBadge } from "@/components/salon-type-badge";
 import {
   SALON_TYPES,
   MIN_ESTABLISHMENT_YEAR,
   MAX_ESTABLISHMENT_YEAR,
 } from "@/lib/salon-constants";
-import {
-  passwordUpdateSchema,
-  profileUpdateSchema,
-  type PasswordUpdateInput,
-  type ProfileUpdateInput,
-} from "@/lib/validations";
+import { profileUpdateSchema, type ProfileUpdateInput } from "@/lib/validations";
 import { handleDigitInput } from "@/lib/digit-input";
-import {
-  clearRecaptchaVerifier,
-  getFirebaseAuth,
-  getOrCreateRecaptchaVerifier,
-  googleProvider,
-} from "@/lib/firebase";
 import type { SalonUser } from "@/types";
 import { toast } from "sonner";
 
+const ImageCropDialog = dynamic(
+  () =>
+    import("@/components/dashboard/image-crop-dialog").then(
+      (mod) => mod.ImageCropDialog
+    ),
+  { ssr: false }
+);
+
 export function SalonProfileForm({ initialSalon }: { initialSalon: SalonUser }) {
-  const router = useRouter();
   const [salon, setSalon] = useState(initialSalon);
-  const [linkingGoogle, setLinkingGoogle] = useState(false);
-  const [sendingOtp, setSendingOtp] = useState(false);
-  const [verifyingOtp, setVerifyingOtp] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
-  const [otp, setOtp] = useState("");
-  const [confirmation, setConfirmation] = useState<ConfirmationResult | null>(
-    null
-  );
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [cropSrc, setCropSrc] = useState("");
   const [cropOpen, setCropOpen] = useState(false);
 
   const {
-    register: registerProfile,
-    handleSubmit: handleProfileSubmit,
-    reset: resetProfile,
+    register,
+    handleSubmit,
+    reset,
     watch,
     setValue,
-    formState: { errors: profileErrors, isSubmitting: isProfileSubmitting },
+    formState: { errors, isSubmitting },
   } = useForm<ProfileUpdateInput>({
     resolver: zodResolver(profileUpdateSchema),
     defaultValues: {
@@ -76,7 +57,6 @@ export function SalonProfileForm({ initialSalon }: { initialSalon: SalonUser }) 
       ownerName: salon.ownerName,
       email: salon.email,
       staffCount: salon.staffCount,
-      salonNumber: salon.salonNumber ?? "",
       salonType: salon.salonType,
       logoUrl: salon.logoUrl ?? "",
       salonAddress: salon.salonAddress ?? "",
@@ -92,17 +72,6 @@ export function SalonProfileForm({ initialSalon }: { initialSalon: SalonUser }) 
     },
   });
 
-  const {
-    register: registerPassword,
-    handleSubmit: handlePasswordSubmit,
-    reset: resetPassword,
-    formState: { errors: passwordErrors, isSubmitting: isPasswordSubmitting },
-  } = useForm<PasswordUpdateInput>({
-    resolver: zodResolver(passwordUpdateSchema),
-  });
-
-  const watchedEmail = watch("email");
-  const watchedSalonNumber = watch("salonNumber");
   const watchedSalonType = watch("salonType");
   const watchedLogoUrl = watch("logoUrl");
 
@@ -161,12 +130,11 @@ export function SalonProfileForm({ initialSalon }: { initialSalon: SalonUser }) 
   }
 
   useEffect(() => {
-    resetProfile({
+    reset({
       salonName: salon.salonName,
       ownerName: salon.ownerName,
       email: salon.email,
       staffCount: salon.staffCount,
-      salonNumber: salon.salonNumber ?? "",
       salonType: salon.salonType,
       logoUrl: salon.logoUrl ?? "",
       salonAddress: salon.salonAddress ?? "",
@@ -180,21 +148,7 @@ export function SalonProfileForm({ initialSalon }: { initialSalon: SalonUser }) 
         ? String(salon.establishmentYear)
         : "",
     });
-  }, [salon, resetProfile]);
-
-  useEffect(() => {
-    return () => {
-      clearRecaptchaVerifier();
-    };
-  }, []);
-
-  const emailIsVerified =
-    salon.googleLinked &&
-    watchedEmail.trim().toLowerCase() === salon.email.toLowerCase();
-
-  const phoneIsVerified =
-    salon.salonNumberVerified &&
-    watchedSalonNumber === (salon.salonNumber ?? "");
+  }, [salon, reset]);
 
   async function onProfileSubmit(data: ProfileUpdateInput) {
     try {
@@ -212,166 +166,14 @@ export function SalonProfileForm({ initialSalon }: { initialSalon: SalonUser }) 
       }
 
       setSalon(result.data.salon);
-      setOtpSent(false);
-      setOtp("");
-      setConfirmation(null);
       toast.success("Profile updated successfully");
-      router.refresh();
     } catch {
       toast.error("Something went wrong");
     }
   }
-
-  async function onPasswordSubmit(data: PasswordUpdateInput) {
-    try {
-      const res = await fetch("/api/salon/password", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-
-      const result = await res.json();
-
-      if (!result.success) {
-        toast.error(result.message || "Failed to update password");
-        return;
-      }
-
-      resetPassword();
-      toast.success("Password updated successfully");
-    } catch {
-      toast.error("Something went wrong");
-    }
-  }
-
-  async function handleVerifyEmail() {
-    if (!watchedEmail?.trim()) {
-      toast.error("Enter your email address first");
-      return;
-    }
-
-    if (watchedEmail.trim().toLowerCase() !== salon.email.toLowerCase()) {
-      toast.error("Save your email changes first, then verify with Google");
-      return;
-    }
-
-    try {
-      setLinkingGoogle(true);
-      const auth = getFirebaseAuth();
-      const result = await signInWithPopup(auth, googleProvider);
-      const idToken = await result.user.getIdToken();
-
-      const res = await fetch("/api/salon/link-google", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken }),
-      });
-
-      const response = await res.json();
-
-      if (!response.success) {
-        toast.error(response.message || "Failed to verify email with Google");
-        return;
-      }
-
-      setSalon(response.data.salon);
-      toast.success("Email verified and Google account connected");
-      router.refresh();
-    } catch (error) {
-      console.error("Verify email error:", error);
-      toast.error("Google verification was cancelled or failed");
-    } finally {
-      setLinkingGoogle(false);
-    }
-  }
-
-  async function handleSendOtp() {
-    if (!/^[6-9]\d{9}$/.test(watchedSalonNumber || "")) {
-      toast.error("Enter a valid 10-digit Indian mobile number first");
-      return;
-    }
-
-    if (watchedSalonNumber !== (salon.salonNumber ?? "")) {
-      toast.error("Save your salon number first, then verify with OTP");
-      return;
-    }
-
-    try {
-      setSendingOtp(true);
-      clearRecaptchaVerifier();
-      const auth = getFirebaseAuth();
-      const verifier = getOrCreateRecaptchaVerifier("recaptcha-container");
-      const confirmationResult = await signInWithPhoneNumber(
-        auth,
-        `+91${watchedSalonNumber}`,
-        verifier
-      );
-      setConfirmation(confirmationResult);
-      setOtpSent(true);
-      setOtp("");
-      toast.success("OTP sent to your salon number");
-    } catch (error) {
-      console.error("Send OTP error:", error);
-      clearRecaptchaVerifier();
-      toast.error("Failed to send OTP. Check Firebase phone auth settings.");
-    } finally {
-      setSendingOtp(false);
-    }
-  }
-
-  async function handleVerifyOtp() {
-    if (!confirmation) {
-      toast.error("Request an OTP first");
-      return;
-    }
-
-    if (!/^\d{6}$/.test(otp)) {
-      toast.error("Enter the 6-digit OTP");
-      return;
-    }
-
-    try {
-      setVerifyingOtp(true);
-      const credential = await confirmation.confirm(otp);
-      const idToken = await credential.user.getIdToken();
-
-      const res = await fetch("/api/salon/verify-phone", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          idToken,
-          salonNumber: watchedSalonNumber,
-        }),
-      });
-
-      const response = await res.json();
-
-      if (!response.success) {
-        toast.error(response.message || "Failed to verify salon number");
-        return;
-      }
-
-      setSalon(response.data.salon);
-      setOtpSent(false);
-      setOtp("");
-      setConfirmation(null);
-      clearRecaptchaVerifier();
-      toast.success("Salon number verified successfully");
-      router.refresh();
-    } catch (error) {
-      console.error("Verify OTP error:", error);
-      toast.error("Invalid OTP. Please try again.");
-    } finally {
-      setVerifyingOtp(false);
-    }
-  }
-
-  const showPasswordSection = salon.authProvider === "email";
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <div id="recaptcha-container" />
-
       <ImageCropDialog
         open={cropOpen}
         imageSrc={cropSrc}
@@ -386,60 +188,60 @@ export function SalonProfileForm({ initialSalon }: { initialSalon: SalonUser }) 
           <CardTitle>Salon Details</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleProfileSubmit(onProfileSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onProfileSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label>Salon Logo (optional)</Label>
-                  <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-                    <div className="relative flex size-20 items-center justify-center overflow-hidden rounded-xl border border-border bg-muted">
-                      {watchedLogoUrl ? (
-                        <Image
-                          src={watchedLogoUrl}
-                          alt="Salon logo preview"
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <Store className="size-8 text-muted-foreground" />
-                      )}
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={uploadingLogo}
-                        onClick={() =>
-                          document.getElementById("salon-logo-input")?.click()
-                        }
-                      >
-                        {uploadingLogo ? (
-                          <Loader2 className="mr-2 size-4 animate-spin" />
-                        ) : (
-                          <Upload className="mr-2 size-4" />
-                        )}
-                        {watchedLogoUrl ? "Change Logo" : "Upload Logo"}
-                      </Button>
-                      {watchedLogoUrl ? (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleRemoveLogo}
-                        >
-                          Remove
-                        </Button>
-                      ) : null}
-                      <input
-                        id="salon-logo-input"
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleLogoSelect}
-                      />
-                    </div>
-                  </div>
-              {profileErrors.logoUrl && (
-                <p className="text-sm text-danger">{profileErrors.logoUrl.message}</p>
+              <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+                <div className="relative flex size-20 items-center justify-center overflow-hidden rounded-xl border border-border bg-muted">
+                  {watchedLogoUrl ? (
+                    <Image
+                      src={watchedLogoUrl}
+                      alt="Salon logo preview"
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <Store className="size-8 text-muted-foreground" />
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={uploadingLogo}
+                    onClick={() =>
+                      document.getElementById("salon-logo-input")?.click()
+                    }
+                  >
+                    {uploadingLogo ? (
+                      <Loader2 className="mr-2 size-4 animate-spin" />
+                    ) : (
+                      <Upload className="mr-2 size-4" />
+                    )}
+                    {watchedLogoUrl ? "Change Logo" : "Upload Logo"}
+                  </Button>
+                  {watchedLogoUrl ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleRemoveLogo}
+                    >
+                      Remove
+                    </Button>
+                  ) : null}
+                  <input
+                    id="salon-logo-input"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleLogoSelect}
+                  />
+                </div>
+              </div>
+              {errors.logoUrl && (
+                <p className="text-sm text-danger">{errors.logoUrl.message}</p>
               )}
             </div>
 
@@ -467,186 +269,88 @@ export function SalonProfileForm({ initialSalon }: { initialSalon: SalonUser }) 
               {watchedSalonType && (
                 <SalonTypeBadge type={watchedSalonType} className="mt-1" />
               )}
-              {profileErrors.salonType && (
-                <p className="text-sm text-danger">
-                  {profileErrors.salonType.message}
-                </p>
+              {errors.salonType && (
+                <p className="text-sm text-danger">{errors.salonType.message}</p>
               )}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="profile-salonName">Salon Name</Label>
-              <Input id="profile-salonName" {...registerProfile("salonName")} />
-              {profileErrors.salonName && (
-                <p className="text-sm text-danger">{profileErrors.salonName.message}</p>
+              <Input id="profile-salonName" {...register("salonName")} />
+              {errors.salonName && (
+                <p className="text-sm text-danger">{errors.salonName.message}</p>
               )}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="profile-ownerName">Owner / Manager Name</Label>
-              <Input id="profile-ownerName" {...registerProfile("ownerName")} />
-              {profileErrors.ownerName && (
-                <p className="text-sm text-danger">{profileErrors.ownerName.message}</p>
+              <Input id="profile-ownerName" {...register("ownerName")} />
+              {errors.ownerName && (
+                <p className="text-sm text-danger">{errors.ownerName.message}</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="profile-email">Email Address</Label>
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <Input
-                  id="profile-email"
-                  type="email"
-                  className="flex-1"
-                  {...registerProfile("email")}
-                />
-                {emailIsVerified ? (
-                  <span className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-emerald-600 dark:text-emerald-400">
-                    <CheckCircle2 className="size-4" />
-                    Verified
-                  </span>
-                ) : (
-                  salon.authProvider === "email" && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleVerifyEmail}
-                      disabled={linkingGoogle}
-                      className="shrink-0"
-                    >
-                      {linkingGoogle && (
-                        <Loader2 className="mr-2 size-4 animate-spin" />
-                      )}
-                      Verify Email
-                    </Button>
-                  )
-                )}
-              </div>
-              {profileErrors.email && (
-                <p className="text-sm text-danger">{profileErrors.email.message}</p>
-              )}
-              {salon.authProvider === "email" && !emailIsVerified && (
-                <p className="text-xs text-muted-foreground">
-                  Verify with Google using the same email to enable Google
-                  sign-in.
-                </p>
-              )}
-              {salon.authProvider === "email" && emailIsVerified && (
-                <p className="text-xs text-muted-foreground">
-                  Connected with Google. You can sign in with password or Google.
-                </p>
-              )}
-              {salon.authProvider === "google" && (
-                <p className="text-xs text-muted-foreground">
-                  This account uses Google sign-in.
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="profile-salonNumber">Salon Number</Label>
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <Input
-                  id="profile-salonNumber"
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={10}
-                  className="flex-1"
-                  {...registerProfile("salonNumber", {
-                    onChange: (e) => {
-                      handleDigitInput(e, 10);
-                      if (otpSent) {
-                        setOtpSent(false);
-                        setConfirmation(null);
-                        setOtp("");
-                      }
-                    },
-                  })}
-                />
-                {phoneIsVerified ? (
-                  <span className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-emerald-600 dark:text-emerald-400">
-                    <CheckCircle2 className="size-4" />
-                    Verified
-                  </span>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleSendOtp}
-                    disabled={sendingOtp}
-                    className="shrink-0"
-                  >
-                    {sendingOtp && (
-                      <Loader2 className="mr-2 size-4 animate-spin" />
-                    )}
-                    {otpSent ? "Resend OTP" : "Verify Number"}
-                  </Button>
-                )}
-              </div>
-              {profileErrors.salonNumber && (
-                <p className="text-sm text-danger">
-                  {profileErrors.salonNumber.message}
-                </p>
-              )}
-
-              {otpSent && !phoneIsVerified && (
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <Input
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={6}
-                    placeholder="Enter 6-digit OTP"
-                    value={otp}
-                    onChange={(e) => {
-                      handleDigitInput(e, 6);
-                      setOtp(e.target.value);
-                    }}
-                  />
-                  <Button
-                    type="button"
-                    onClick={handleVerifyOtp}
-                    disabled={verifyingOtp}
-                    className="shrink-0"
-                  >
-                    {verifyingOtp && (
-                      <Loader2 className="mr-2 size-4 animate-spin" />
-                    )}
-                    Confirm OTP
-                  </Button>
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="profile-staffCount">Staff Count</Label>
-              <Input
-                id="profile-staffCount"
-                type="number"
-                min={1}
-                {...registerProfile("staffCount", { valueAsNumber: true })}
-              />
-              {profileErrors.staffCount && (
-                <p className="text-sm text-danger">
-                  {profileErrors.staffCount.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="profile-salonAddress">
-                Salon Address{" "}
+              <Label htmlFor="profile-email">
+                Email Address{" "}
                 <span className="font-normal text-muted-foreground">
                   (optional)
                 </span>
               </Label>
+              <Input
+                id="profile-email"
+                type="email"
+                {...register("email")}
+              />
+              {errors.email && (
+                <p className="text-sm text-danger">{errors.email.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="profile-loginPhone">Login Phone</Label>
+              <Input
+                id="profile-loginPhone"
+                type="text"
+                readOnly
+                disabled
+                value={salon.salonNumber}
+                className="bg-muted"
+              />
+              <p className="text-xs text-muted-foreground">
+                This is your login phone number and cannot be changed here.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="profile-staffCount">
+                Staff Count{" "}
+                <span className="font-normal text-muted-foreground">
+                  (optional)
+                </span>
+              </Label>
+              <Input
+                id="profile-staffCount"
+                type="number"
+                min={1}
+                {...register("staffCount", { valueAsNumber: true })}
+              />
+              {errors.staffCount && (
+                <p className="text-sm text-danger">{errors.staffCount.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="profile-salonAddress">Salon Address</Label>
               <Textarea
                 id="profile-salonAddress"
                 rows={3}
                 placeholder="Complete business address"
-                {...registerProfile("salonAddress")}
+                {...register("salonAddress")}
               />
-              {profileErrors.salonAddress && (
+              {errors.salonAddress && (
                 <p className="text-sm text-danger">
-                  {profileErrors.salonAddress.message}
+                  {errors.salonAddress.message}
                 </p>
               )}
             </div>
@@ -662,11 +366,11 @@ export function SalonProfileForm({ initialSalon }: { initialSalon: SalonUser }) 
                 id="profile-googleMapsLocation"
                 type="url"
                 placeholder="https://maps.google.com/..."
-                {...registerProfile("googleMapsLocation")}
+                {...register("googleMapsLocation")}
               />
-              {profileErrors.googleMapsLocation && (
+              {errors.googleMapsLocation && (
                 <p className="text-sm text-danger">
-                  {profileErrors.googleMapsLocation.message}
+                  {errors.googleMapsLocation.message}
                 </p>
               )}
             </div>
@@ -683,11 +387,11 @@ export function SalonProfileForm({ initialSalon }: { initialSalon: SalonUser }) 
                   id="profile-websiteUrl"
                   type="url"
                   placeholder="https://www.example.com"
-                  {...registerProfile("websiteUrl")}
+                  {...register("websiteUrl")}
                 />
-                {profileErrors.websiteUrl && (
+                {errors.websiteUrl && (
                   <p className="text-sm text-danger">
-                    {profileErrors.websiteUrl.message}
+                    {errors.websiteUrl.message}
                   </p>
                 )}
               </div>
@@ -705,11 +409,11 @@ export function SalonProfileForm({ initialSalon }: { initialSalon: SalonUser }) 
                   min={MIN_ESTABLISHMENT_YEAR}
                   max={MAX_ESTABLISHMENT_YEAR}
                   placeholder="e.g. 2018"
-                  {...registerProfile("establishmentYear")}
+                  {...register("establishmentYear")}
                 />
-                {profileErrors.establishmentYear && (
+                {errors.establishmentYear && (
                   <p className="text-sm text-danger">
-                    {profileErrors.establishmentYear.message}
+                    {errors.establishmentYear.message}
                   </p>
                 )}
               </div>
@@ -727,11 +431,11 @@ export function SalonProfileForm({ initialSalon }: { initialSalon: SalonUser }) 
                   id="profile-instagramUrl"
                   type="url"
                   placeholder="https://www.instagram.com/your-salon"
-                  {...registerProfile("instagramUrl")}
+                  {...register("instagramUrl")}
                 />
-                {profileErrors.instagramUrl && (
+                {errors.instagramUrl && (
                   <p className="text-sm text-danger">
-                    {profileErrors.instagramUrl.message}
+                    {errors.instagramUrl.message}
                   </p>
                 )}
               </div>
@@ -747,11 +451,11 @@ export function SalonProfileForm({ initialSalon }: { initialSalon: SalonUser }) 
                   id="profile-facebookUrl"
                   type="url"
                   placeholder="https://www.facebook.com/your-salon"
-                  {...registerProfile("facebookUrl")}
+                  {...register("facebookUrl")}
                 />
-                {profileErrors.facebookUrl && (
+                {errors.facebookUrl && (
                   <p className="text-sm text-danger">
-                    {profileErrors.facebookUrl.message}
+                    {errors.facebookUrl.message}
                   </p>
                 )}
               </div>
@@ -771,13 +475,13 @@ export function SalonProfileForm({ initialSalon }: { initialSalon: SalonUser }) 
                   inputMode="numeric"
                   maxLength={10}
                   placeholder="10-digit WhatsApp number"
-                  {...registerProfile("whatsappNumber", {
+                  {...register("whatsappNumber", {
                     onChange: (e) => handleDigitInput(e, 10),
                   })}
                 />
-                {profileErrors.whatsappNumber && (
+                {errors.whatsappNumber && (
                   <p className="text-sm text-danger">
-                    {profileErrors.whatsappNumber.message}
+                    {errors.whatsappNumber.message}
                   </p>
                 )}
               </div>
@@ -793,18 +497,18 @@ export function SalonProfileForm({ initialSalon }: { initialSalon: SalonUser }) 
                   id="profile-youtubeUrl"
                   type="url"
                   placeholder="https://www.youtube.com/@your-salon"
-                  {...registerProfile("youtubeUrl")}
+                  {...register("youtubeUrl")}
                 />
-                {profileErrors.youtubeUrl && (
+                {errors.youtubeUrl && (
                   <p className="text-sm text-danger">
-                    {profileErrors.youtubeUrl.message}
+                    {errors.youtubeUrl.message}
                   </p>
                 )}
               </div>
             </div>
 
-            <Button type="submit" disabled={isProfileSubmitting}>
-              {isProfileSubmitting && (
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting && (
                 <Loader2 className="mr-2 size-4 animate-spin" />
               )}
               Save Changes
@@ -812,63 +516,6 @@ export function SalonProfileForm({ initialSalon }: { initialSalon: SalonUser }) 
           </form>
         </CardContent>
       </Card>
-
-      {showPasswordSection ? (
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle>Change Password</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form
-              onSubmit={handlePasswordSubmit(onPasswordSubmit)}
-              className="space-y-4"
-            >
-              <div className="space-y-2">
-                <Label htmlFor="currentPassword">Current Password</Label>
-                <PasswordInput
-                  id="currentPassword"
-                  {...registerPassword("currentPassword")}
-                />
-                {passwordErrors.currentPassword && (
-                  <p className="text-sm text-danger">
-                    {passwordErrors.currentPassword.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="newPassword">New Password</Label>
-                <PasswordInput
-                  id="newPassword"
-                  placeholder="Min 8 chars, 1 uppercase, 1 number"
-                  {...registerPassword("newPassword")}
-                />
-                {passwordErrors.newPassword && (
-                  <p className="text-sm text-danger">
-                    {passwordErrors.newPassword.message}
-                  </p>
-                )}
-              </div>
-
-              <Button type="submit" disabled={isPasswordSubmitting}>
-                {isPasswordSubmitting && (
-                  <Loader2 className="mr-2 size-4 animate-spin" />
-                )}
-                Update Password
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card className="shadow-sm">
-          <CardContent className="py-6">
-            <p className="text-sm text-muted-foreground">
-              Your account is connected with Google. Password updates are not
-              required.
-            </p>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }

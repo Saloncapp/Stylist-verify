@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { requireSalonSession } from "@/lib/auth";
 import { verifySchema } from "@/lib/validations";
 import { jsonError, jsonSuccess, zodErrorResponse } from "@/lib/api";
 import {
@@ -12,7 +12,7 @@ import Stylist from "@/models/Stylist";
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getSession();
+    const session = await requireSalonSession();
     if (!session) {
       return jsonError("Not authenticated", 401);
     }

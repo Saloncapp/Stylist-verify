@@ -29,7 +29,7 @@ import {
   calculateOverallPerformanceRating,
   formatOverallPerformanceRating,
 } from "@/lib/performance-ratings";
-import { hasPerformanceInfo } from "@/lib/formatters";
+import { hasPerformanceInfo } from "@/lib/performance-ratings";
 import type { PerformanceRatingValue } from "@/lib/performance-ratings";
 import type { StylistRecord } from "@/types";
 import { toast } from "sonner";

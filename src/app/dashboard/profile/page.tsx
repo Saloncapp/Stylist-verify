@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { connectDB } from "@/lib/db";
-import { getSession, toSalonUser } from "@/lib/auth";
+import { requireSalonSession, toSalonUser } from "@/lib/auth";
 import Salon from "@/models/Salon";
 import { SalonProfileForm } from "@/components/dashboard/salon-profile-form";
 
@@ -10,16 +10,16 @@ export const metadata: Metadata = {
 };
 
 export default async function SalonProfilePage() {
-  const session = await getSession();
-  if (!session) {
-    redirect("/login");
+  const session = await requireSalonSession();
+  if (!session?.salonId) {
+    redirect("/");
   }
 
   await connectDB();
 
-  const salon = await Salon.findById(session.salonId).select("-password");
+  const salon = await Salon.findById(session.salonId);
   if (!salon) {
-    redirect("/login");
+    redirect("/");
   }
 
   return (
@@ -27,7 +27,8 @@ export default async function SalonProfilePage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Salon Profile</h1>
         <p className="text-muted-foreground">
-          Update your salon details and account settings
+          Update your salon details. Phone number is your login identity and
+          cannot be changed here.
         </p>
       </div>
       <SalonProfileForm initialSalon={toSalonUser(salon)} />

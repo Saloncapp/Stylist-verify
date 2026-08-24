@@ -1,10 +1,5 @@
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
-import {
-  getAuth,
-  GoogleAuthProvider,
-  RecaptchaVerifier,
-  type Auth,
-} from "firebase/auth";
+import { getAuth, RecaptchaVerifier, type Auth } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -26,11 +21,10 @@ export function getFirebaseAuth(): Auth {
   return getAuth(getFirebaseApp());
 }
 
-export const googleProvider = new GoogleAuthProvider();
-
 declare global {
   interface Window {
     __svRecaptchaVerifier?: RecaptchaVerifier;
+    __svRecaptchaVerifiers?: Record<string, RecaptchaVerifier>;
   }
 }
 
@@ -40,8 +34,10 @@ export function getOrCreateRecaptchaVerifier(
 ): RecaptchaVerifier {
   const auth = getFirebaseAuth();
 
-  if (typeof window !== "undefined" && window.__svRecaptchaVerifier) {
-    return window.__svRecaptchaVerifier;
+  if (typeof window !== "undefined") {
+    window.__svRecaptchaVerifiers ??= {};
+    const existing = window.__svRecaptchaVerifiers[containerId];
+    if (existing) return existing;
   }
 
   const verifier = new RecaptchaVerifier(auth, containerId, {
@@ -49,19 +45,41 @@ export function getOrCreateRecaptchaVerifier(
   });
 
   if (typeof window !== "undefined") {
+    window.__svRecaptchaVerifiers ??= {};
+    window.__svRecaptchaVerifiers[containerId] = verifier;
     window.__svRecaptchaVerifier = verifier;
   }
 
   return verifier;
 }
 
-export function clearRecaptchaVerifier() {
-  if (typeof window !== "undefined" && window.__svRecaptchaVerifier) {
+export function clearRecaptchaVerifier(containerId?: string) {
+  if (typeof window === "undefined") return;
+
+  const clearOne = (id: string, verifier?: RecaptchaVerifier) => {
     try {
-      window.__svRecaptchaVerifier.clear();
+      verifier?.clear();
     } catch {
       // ignore
     }
-    window.__svRecaptchaVerifier = undefined;
+    if (window.__svRecaptchaVerifiers) {
+      delete window.__svRecaptchaVerifiers[id];
+    }
+  };
+
+  if (containerId) {
+    const verifier = window.__svRecaptchaVerifiers?.[containerId];
+    if (window.__svRecaptchaVerifier === verifier) {
+      window.__svRecaptchaVerifier = undefined;
+    }
+    clearOne(containerId, verifier);
+    return;
   }
+
+  if (window.__svRecaptchaVerifiers) {
+    for (const [id, verifier] of Object.entries(window.__svRecaptchaVerifiers)) {
+      clearOne(id, verifier);
+    }
+  }
+  window.__svRecaptchaVerifier = undefined;
 }

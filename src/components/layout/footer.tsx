@@ -28,13 +28,8 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/register" className="hover:text-foreground">
-                  Register Salon
-                </Link>
-              </li>
-              <li>
-                <Link href="/login" className="hover:text-foreground">
-                  Login
+                <Link href="/#continue-with-mobile" className="hover:text-foreground">
+                  Sign in
                 </Link>
               </li>
             </ul>
@@ -52,7 +47,7 @@ export function Footer() {
         </div>
 
         <div className="mt-10 border-t border-border pt-6 text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} Stylist Verify. All rights reserved.
+          © 2026 Salon Capp. All rights reserved.
         </div>
       </div>
     </footer>

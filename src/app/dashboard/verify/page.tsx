@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { VerifyStylistForm } from "@/components/dashboard/verify-stylist-form";
+import { FindStylistPageContent } from "@/components/dashboard/find-stylist-page-content";
 
 export const metadata: Metadata = {
-  title: "Verify Stylist",
+  title: "Find Stylist",
 };
 
-export default function DashboardVerifyPage() {
-  return <VerifyStylistForm />;
+export default function DashboardFindStylistPage() {
+  return <FindStylistPageContent />;
 }

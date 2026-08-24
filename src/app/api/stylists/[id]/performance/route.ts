@@ -1,9 +1,14 @@
 import { calculateOverallPerformanceRating } from "@/lib/performance-ratings";
 import { jsonError, jsonSuccess, zodErrorResponse } from "@/lib/api";
 import { connectDB } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { requireSalonSession } from "@/lib/auth";
 import { formatStylist } from "@/lib/formatters";
 import { performanceUpdateSchema } from "@/lib/validations";
+import {
+  findStylistForSalonQuery,
+  getCurrentSalonEmployment,
+  getSalonEmploymentEntries,
+} from "@/lib/stylist-employment";
 import Stylist from "@/models/Stylist";
 import { NextRequest } from "next/server";
 
@@ -17,8 +22,8 @@ function normalizeRating(value?: number | null): number | undefined {
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
-    const session = await getSession();
-    if (!session) {
+    const session = await requireSalonSession();
+    if (!session?.salonId) {
       return jsonError("Not authenticated", 401);
     }
 
@@ -50,42 +55,37 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     await connectDB();
 
-    const stylist = await Stylist.findOne({
-      _id: id,
-      salonId: session.salonId,
-    });
+    const stylist = await Stylist.findOne(
+      findStylistForSalonQuery(id, session.salonId)
+    );
 
     if (!stylist) {
       return jsonError("Stylist not found", 404);
     }
 
-    stylist.set({
-      performanceSummary,
-      managerFeedback,
-      specialistServices,
-      overallExperienceRating,
-      technicalSkillRating,
-      customerHandlingRating,
-      overallPerformanceRating,
-    });
+    const salonEntries = getSalonEmploymentEntries(stylist, session.salonId);
+    const current =
+      getCurrentSalonEmployment(stylist, session.salonId) ?? salonEntries.at(-1);
 
-    if (stylist.employmentHistory.length > 0) {
-      for (const entry of stylist.employmentHistory) {
-        entry.performanceSummary = performanceSummary;
-        entry.managerFeedback = managerFeedback;
-        entry.specialistServices = specialistServices;
-        entry.overallExperienceRating = overallExperienceRating;
-        entry.technicalSkillRating = technicalSkillRating;
-        entry.customerHandlingRating = customerHandlingRating;
-        entry.overallPerformanceRating = overallPerformanceRating;
-        entry.updatedAt = new Date();
-      }
-      stylist.markModified("employmentHistory");
+    if (!current) {
+      return jsonError("No employment record found at your salon", 404);
     }
+
+    current.performanceSummary = performanceSummary;
+    current.managerFeedback = managerFeedback;
+    current.specialistServices = specialistServices;
+    current.overallExperienceRating = overallExperienceRating;
+    current.technicalSkillRating = technicalSkillRating;
+    current.customerHandlingRating = customerHandlingRating;
+    current.overallPerformanceRating = overallPerformanceRating;
+    current.updatedAt = new Date();
+    stylist.markModified("employmentHistory");
 
     await stylist.save();
 
-    return jsonSuccess({ stylist: formatStylist(stylist) });
+    return jsonSuccess({
+      stylist: formatStylist(stylist, session.salonId),
+    });
   } catch (error) {
     console.error("Update performance error:", error);
     return jsonError("Failed to update performance information", 500);

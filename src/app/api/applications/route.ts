@@ -1,0 +1,78 @@
+import { NextRequest } from "next/server";
+import { connectDB } from "@/lib/db";
+import { requireSalonSession } from "@/lib/auth";
+import { jsonError, jsonSuccess } from "@/lib/api";
+import {
+  decodeHiringCursor,
+  encodeHiringCursor,
+  formatApplicationCard,
+  hiringCursorFilter,
+  parseHiringLimit,
+} from "@/lib/hiring";
+import Application from "@/models/Application";
+
+export async function GET(request: NextRequest) {
+  try {
+    const session = await requireSalonSession();
+    if (!session?.salonId) {
+      return jsonError("Not authenticated", 401);
+    }
+
+    await connectDB();
+
+    const { searchParams } = new URL(request.url);
+    const limit = parseHiringLimit(searchParams.get("limit"));
+    const cursor = decodeHiringCursor(searchParams.get("cursor"));
+    const jobId = searchParams.get("jobId");
+    const status = searchParams.get("status");
+
+    const filter: Record<string, unknown> = {
+      salonId: session.salonId,
+      ...(jobId ? { jobId } : {}),
+      ...(status === "Interested" ||
+      status === "Rejected" ||
+      status === "Hired"
+        ? { status }
+        : {}),
+      ...hiringCursorFilter(cursor),
+    };
+
+    const hasStatusFilter =
+      status === "Interested" ||
+      status === "Rejected" ||
+      status === "Hired";
+
+    const baseFilter: Record<string, unknown> = {
+      salonId: session.salonId,
+      ...(jobId ? { jobId } : {}),
+      ...(hasStatusFilter ? { status } : {}),
+    };
+
+    const [apps, totalCount] = await Promise.all([
+      Application.find(filter)
+        .sort({ createdAt: -1, _id: -1 })
+        .limit(limit + 1)
+        .lean(),
+      hasStatusFilter && !cursor
+        ? Application.countDocuments(baseFilter)
+        : Promise.resolve(null),
+    ]);
+
+    const page = apps.slice(0, limit);
+    const items = page.map((app) => formatApplicationCard(app as never));
+    const last = page[page.length - 1];
+    const nextCursor =
+      apps.length > limit && last
+        ? encodeHiringCursor(last.createdAt, last._id.toString())
+        : null;
+
+    return jsonSuccess({
+      items,
+      nextCursor,
+      ...(totalCount != null ? { totalCount } : {}),
+    });
+  } catch (error) {
+    console.error("List applications error:", error);
+    return jsonError("Failed to load applicants", 500);
+  }
+}

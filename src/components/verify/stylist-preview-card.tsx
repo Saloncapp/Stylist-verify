@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { formatOverallPerformanceRating } from "@/lib/performance-ratings";
 import type { PublicStylistPreview } from "@/types";
 
-const AUTH_HREF = "/login";
+const AUTH_HREF = "/#continue-with-mobile";
 
 function BlurredDetailsPlaceholder() {
   return (
@@ -80,7 +80,7 @@ export function StylistPreviewCard({
         <Link
           href={AUTH_HREF}
           className="relative mt-1 block h-36 overflow-hidden rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring/50 sm:h-40"
-          aria-label="See full profile. Login or register to see more."
+          aria-label="See full profile. Continue with Mobile to see more."
         >
           <div
             className="pointer-events-none select-none blur-[5px] [mask-image:linear-gradient(to_bottom,transparent_0%,black_28%,black_100%)] [-webkit-mask-image:linear-gradient(to_bottom,transparent_0%,black_28%,black_100%)]"
@@ -97,7 +97,7 @@ export function StylistPreviewCard({
               See more
             </span>
             <span className="text-xs text-muted-foreground">
-              Login or Register to see more
+              Continue with Mobile to see more
             </span>
           </div>
         </Link>

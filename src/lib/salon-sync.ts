@@ -2,26 +2,13 @@ import type { Types } from "mongoose";
 import type { SalonType } from "@/lib/salon-constants";
 import { normalizeOptionalUrl } from "@/lib/salon-constants";
 import Stylist from "@/models/Stylist";
+import type { ISalonSnapshot } from "@/models/Stylist";
 
-export interface SalonDetailsSync {
-  salonName: string;
-  salonLogoUrl?: string;
-  salonType: SalonType;
-  salonAddress?: string;
-  salonEmail?: string;
-  salonNumber?: string;
-  googleMapsLocation?: string;
-  websiteUrl?: string;
-  instagramUrl?: string;
-  facebookUrl?: string;
-  whatsappNumber?: string;
-  youtubeUrl?: string;
-  establishmentYear?: number;
-}
+export type SalonDetailsSync = ISalonSnapshot;
 
 export function salonSnapshotFromSalon(salon: {
   salonName: string;
-  email: string;
+  email?: string;
   salonNumber?: string;
   logoUrl?: string;
   salonType: SalonType;
@@ -51,7 +38,7 @@ export function salonSnapshotFromSalon(salon: {
   };
 }
 
-/** Propagate salon branding and details to stylist records and their employment history */
+/** Propagate salon branding and details to employment history snapshots */
 export async function syncSalonDetailsToStylists(
   salonId: Types.ObjectId,
   details: SalonDetailsSync
@@ -72,27 +59,11 @@ export async function syncSalonDetailsToStylists(
     establishmentYear: details.establishmentYear ?? null,
   };
 
-  await Stylist.updateMany({ salonId }, { $set: snapshot });
-
   await Stylist.updateMany(
     { "employmentHistory.salonId": salonId },
     {
       $set: {
-        "employmentHistory.$[elem].salonName": snapshot.salonName,
-        "employmentHistory.$[elem].salonLogoUrl": snapshot.salonLogoUrl,
-        "employmentHistory.$[elem].salonType": snapshot.salonType,
-        "employmentHistory.$[elem].salonAddress": snapshot.salonAddress,
-        "employmentHistory.$[elem].salonEmail": snapshot.salonEmail,
-        "employmentHistory.$[elem].salonNumber": snapshot.salonNumber,
-        "employmentHistory.$[elem].googleMapsLocation":
-          snapshot.googleMapsLocation,
-        "employmentHistory.$[elem].websiteUrl": snapshot.websiteUrl,
-        "employmentHistory.$[elem].instagramUrl": snapshot.instagramUrl,
-        "employmentHistory.$[elem].facebookUrl": snapshot.facebookUrl,
-        "employmentHistory.$[elem].whatsappNumber": snapshot.whatsappNumber,
-        "employmentHistory.$[elem].youtubeUrl": snapshot.youtubeUrl,
-        "employmentHistory.$[elem].establishmentYear":
-          snapshot.establishmentYear,
+        "employmentHistory.$[elem].salonSnapshot": snapshot,
       },
     },
     {

@@ -3,9 +3,10 @@
 import { useState } from "react";
 import {
   BadgeCheck,
+  Check,
   Copy,
 } from "lucide-react";
-import Image from "next/image";
+import { StylistAvatar } from "@/components/stylist-avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/status-badge";
@@ -14,7 +15,6 @@ import { EmploymentHistoryDetails } from "@/components/employment-history-detail
 import { PerformanceRatingBadge } from "@/components/performance/performance-rating-display";
 import {
   formatMobileDisplay,
-  getInitials,
 } from "@/components/verify/profile-detail-field";
 import { formatTotalExperience } from "@/lib/employment-duration";
 import {
@@ -35,8 +35,9 @@ type VerificationEmployment =
 
 export interface VerifiedStylistViewProps {
   name: string;
+  employeeId?: string;
   photoUrl?: string;
-  status: StylistStatus;
+  status?: StylistStatus;
   mobile: string;
   aadhaar: string;
   address?: string;
@@ -91,13 +92,18 @@ function CopyButton({ value, label }: { value: string; label: string }) {
       aria-label={`Copy ${label}`}
       title={`Copy ${label}`}
     >
-      <Copy className={cn("size-3.5", copied && "text-success")} />
+      {copied ? (
+        <Check className="size-3.5 text-success" aria-hidden="true" />
+      ) : (
+        <Copy className="size-3.5" aria-hidden="true" />
+      )}
     </Button>
   );
 }
 
 export function VerifiedStylistView({
   name,
+  employeeId,
   photoUrl,
   status,
   mobile,
@@ -118,20 +124,14 @@ export function VerifiedStylistView({
       <Card className="overflow-hidden shadow-sm">
         <CardContent className="p-5 sm:p-6">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-            <div className="relative mx-auto flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary sm:mx-0">
-              {photoUrl ? (
-                <Image
-                  src={photoUrl}
-                  alt={name}
-                  fill
-                  className="object-cover"
-                />
-              ) : (
-                <span className="text-2xl font-semibold text-primary-foreground">
-                  {getInitials(name).charAt(0)}
-                </span>
-              )}
-            </div>
+            <StylistAvatar
+              name={name}
+              photoUrl={photoUrl}
+              size="xl"
+              variant="profile"
+              className="mx-auto sm:mx-0"
+              alt={name}
+            />
 
             <div className="min-w-0 flex-1">
               <div className="flex flex-col items-center gap-2 sm:items-start">
@@ -149,6 +149,12 @@ export function VerifiedStylistView({
               </div>
 
               <div className="mt-5 grid gap-2 text-sm sm:grid-cols-2">
+                {employeeId ? (
+                  <p>
+                    <span className="text-muted-foreground">Employee ID:</span>{" "}
+                    {employeeId}
+                  </p>
+                ) : null}
                 <p className="flex items-center gap-2">
                   <span>
                     <span className="text-muted-foreground">Mobile:</span>{" "}
@@ -161,7 +167,7 @@ export function VerifiedStylistView({
                 </p>
                 <p>
                   <span className="text-muted-foreground">Current Status:</span>{" "}
-                  {status}
+                  {status ?? "—"}
                 </p>
                 <p>
                   <span className="text-muted-foreground">Overall Experience:</span>{" "}

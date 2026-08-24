@@ -46,6 +46,10 @@ export async function POST(request: NextRequest) {
     const purpose = String(formData.get("purpose") ?? "image").toLowerCase();
     const isDocument = purpose === "document";
 
+    if (isDocument && session.role !== "salon") {
+      return jsonError("Not authorized", 403);
+    }
+
     if (!file) {
       return jsonError("No file provided", 400);
     }
