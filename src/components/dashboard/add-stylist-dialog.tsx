@@ -47,6 +47,7 @@ import { indianMobileSchema, stylistCreateSchema } from "@/lib/validations";
 import { cn } from "@/lib/utils";
 import { StylistAvatar } from "@/components/stylist-avatar";
 import { toast } from "sonner";
+import type { HiringApplicationCard } from "@/types";
 
 const ImageCropDialog = dynamic(
   () =>

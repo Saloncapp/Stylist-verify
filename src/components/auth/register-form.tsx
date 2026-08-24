@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { signOut } from "firebase/auth";
@@ -62,7 +62,7 @@ export function RegisterForm() {
   const salonForm = useForm<Omit<SalonRegisterInput, "idToken" | "role">>({
     resolver: zodResolver(
       salonRegisterSchema.omit({ idToken: true, role: true })
-    ),
+    ) as Resolver<Omit<SalonRegisterInput, "idToken" | "role">>,
     defaultValues: {
       salonName: "",
       salonAddress: "",
@@ -75,7 +75,7 @@ export function RegisterForm() {
   const stylistForm = useForm<Omit<StylistRegisterInput, "idToken" | "role">>({
     resolver: zodResolver(
       stylistRegisterSchema.omit({ idToken: true, role: true })
-    ),
+    ) as Resolver<Omit<StylistRegisterInput, "idToken" | "role">>,
     defaultValues: {
       name: "",
       aadhaarNumber: "",

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Store, Upload } from "lucide-react";
 import Image from "next/image";
@@ -51,7 +51,7 @@ export function SalonProfileForm({ initialSalon }: { initialSalon: SalonUser }) 
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<ProfileUpdateInput>({
-    resolver: zodResolver(profileUpdateSchema),
+    resolver: zodResolver(profileUpdateSchema) as Resolver<ProfileUpdateInput>,
     defaultValues: {
       salonName: salon.salonName,
       ownerName: salon.ownerName,
