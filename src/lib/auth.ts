@@ -1,5 +1,5 @@
 import { SignJWT, jwtVerify } from "jose";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import type { SalonType } from "@/lib/salon-constants";
 import { DEFAULT_SALON_TYPE } from "@/lib/salon-constants";
 import type { SalonUser, StylistAccount } from "@/types";
@@ -83,11 +83,32 @@ export async function clearSessionCookie(): Promise<void> {
   cookieStore.set(COOKIE_NAME, "", sessionCookieClearOptions());
 }
 
+/** Extract Bearer token from an Authorization header value. */
+export function extractBearerToken(
+  authorizationHeader: string | null | undefined
+): string | null {
+  if (!authorizationHeader) return null;
+  const match = /^Bearer\s+(.+)$/i.exec(authorizationHeader.trim());
+  const token = match?.[1]?.trim();
+  return token || null;
+}
+
+/**
+ * Resolve session from Authorization Bearer (mobile) or sv_session cookie (web).
+ * Bearer takes precedence when both are present.
+ */
 export async function getSession(): Promise<SessionPayload | null> {
+  const headerStore = await headers();
+  const bearer = extractBearerToken(headerStore.get("authorization"));
+  if (bearer) {
+    const fromBearer = await verifySession(bearer);
+    if (fromBearer) return fromBearer;
+  }
+
   const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
-  if (!token) return null;
-  return verifySession(token);
+  const cookieToken = cookieStore.get(COOKIE_NAME)?.value;
+  if (!cookieToken) return null;
+  return verifySession(cookieToken);
 }
 
 export async function requireSalonSession(): Promise<SessionPayload | null> {

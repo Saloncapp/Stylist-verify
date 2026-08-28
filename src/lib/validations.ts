@@ -26,7 +26,8 @@ export const authSessionSchema = z.object({
 });
 
 export const salonRegisterSchema = z.object({
-  idToken: z.string().min(1, "ID token is required"),
+  idToken: z.string().min(1, "ID token is required").optional(),
+  registrationToken: z.string().min(1, "Registration token is required").optional(),
   role: z.literal("salon"),
   salonName: z.string().min(2, "Salon name must be at least 2 characters"),
   salonAddress: z.string().min(2, "Salon address is required"),
@@ -42,7 +43,8 @@ export const salonRegisterSchema = z.object({
 });
 
 export const stylistRegisterSchema = z.object({
-  idToken: z.string().min(1, "ID token is required"),
+  idToken: z.string().min(1, "ID token is required").optional(),
+  registrationToken: z.string().min(1, "Registration token is required").optional(),
   role: z.literal("stylist"),
   name: z.string().min(2, "Name must be at least 2 characters"),
   aadhaarNumber: z
@@ -54,10 +56,17 @@ export const stylistRegisterSchema = z.object({
     .optional(),
 });
 
-export const otpRegisterSchema = z.discriminatedUnion("role", [
-  salonRegisterSchema,
-  stylistRegisterSchema,
-]);
+export const otpRegisterSchema = z
+  .discriminatedUnion("role", [salonRegisterSchema, stylistRegisterSchema])
+  .superRefine((data, ctx) => {
+    if (!data.idToken && !data.registrationToken) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Registration session is invalid. Please sign in again.",
+        path: ["registrationToken"],
+      });
+    }
+  });
 
 export const profileUpdateSchema = z.object({
   salonName: z.string().min(2, "Salon name must be at least 2 characters"),

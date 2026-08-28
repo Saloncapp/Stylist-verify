@@ -6,7 +6,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
 import { Users } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { VerifiedStylistView } from "@/components/verify/verified-stylist-view";
 import { StylistPreviewCard } from "@/components/verify/stylist-preview-card";
 import { StylistUnavailableDialog } from "@/components/verify/stylist-unavailable-dialog";
 import {
@@ -15,30 +14,15 @@ import {
 } from "@/components/verify/stylist-search-card";
 import { verifyFormSchema, type VerifyFormInput } from "@/lib/validations";
 import { handleDigitInput } from "@/lib/digit-input";
-import type { PublicStylistPreview, VerifiedStylistResult } from "@/types";
+import type { PublicStylistPreview } from "@/types";
 import { toast } from "sonner";
 
 interface VerifyResult {
   found: boolean;
   locked?: boolean;
   count?: number;
-  stylists: VerifiedStylistResult[];
   previews?: PublicStylistPreview[];
   multiple?: boolean;
-}
-
-function StylistResultCard({ stylist }: { stylist: VerifiedStylistResult }) {
-  return (
-    <VerifiedStylistView
-      name={stylist.name}
-      employeeId={stylist.employeeId}
-      photoUrl={stylist.photoUrl}
-      status={stylist.status}
-      mobile={stylist.maskedMobile}
-      aadhaar={stylist.maskedAadhaar}
-      employmentHistory={stylist.employmentHistory}
-    />
-  );
 }
 
 export function VerifyForm() {
@@ -124,7 +108,7 @@ export function VerifyForm() {
         onOpenChange={setUnavailableOpen}
       />
 
-      {searched && result?.found && result.locked && (
+      {searched && result?.found && (
         <motion.div
           className="space-y-6"
           initial={{ opacity: 0, y: 10 }}
@@ -134,8 +118,8 @@ export function VerifyForm() {
             <Alert>
               <Users className="size-4" />
               <AlertDescription>
-                {previews.length} stylist records were found. Continue with
-                Mobile on the home page to view full details.
+                {previews.length} stylist records were found. Sign in as a salon
+                to view full verification details.
               </AlertDescription>
             </Alert>
           )}
@@ -148,34 +132,6 @@ export function VerifyForm() {
           ))}
         </motion.div>
       )}
-
-      {searched &&
-        result?.found &&
-        !result.locked &&
-        result.stylists.length > 0 && (
-          <motion.div
-            className="space-y-8"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            {result.multiple && (
-              <Alert>
-                <Users className="size-4" />
-                <AlertDescription>
-                  {result.stylists.length} stylists found with this mobile
-                  number. Review each record below.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {result.stylists.map((stylist, index) => (
-              <StylistResultCard
-                key={`${stylist.maskedAadhaar}-${index}`}
-                stylist={stylist}
-              />
-            ))}
-          </motion.div>
-        )}
     </div>
   );
 }

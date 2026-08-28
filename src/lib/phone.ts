@@ -18,3 +18,11 @@ export function normalizeIndianMobile(phone: string): string | null {
   }
   return null;
 }
+
+export function toE164Indian(phone: string): string {
+  const normalized = normalizeIndianMobile(phone);
+  if (!normalized) {
+    throw new Error("Invalid phone number. Use a valid 10-digit Indian mobile.");
+  }
+  return `+91${normalized}`;
+}

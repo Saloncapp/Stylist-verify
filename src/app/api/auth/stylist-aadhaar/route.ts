@@ -1,16 +1,23 @@
 import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/db";
 import { verifyFirebaseIdToken } from "@/lib/firebase-admin";
+import { verifyRegistrationToken } from "@/lib/registration-token";
 import { jsonError, jsonSuccess, zodErrorResponse } from "@/lib/api";
 import { normalizeIndianMobile } from "@/lib/phone";
 import { hashAadhaar } from "@/lib/aadhaar-crypto";
 import { z } from "zod";
 import Stylist from "@/models/Stylist";
 
-const schema = z.object({
-  idToken: z.string().min(1),
-  aadhaarNumber: z.string().regex(/^\d{12}$/, "Aadhaar must be exactly 12 digits"),
-});
+const schema = z
+  .object({
+    idToken: z.string().min(1).optional(),
+    registrationToken: z.string().min(1).optional(),
+    aadhaarNumber: z.string().regex(/^\d{12}$/, "Aadhaar must be exactly 12 digits"),
+  })
+  .refine((data) => Boolean(data.idToken || data.registrationToken), {
+    message: "Registration session is invalid. Please sign in again.",
+    path: ["registrationToken"],
+  });
 
 /**
  * Pending-registration Aadhaar lookup (requires verified Firebase phone token).
@@ -24,10 +31,21 @@ export async function POST(request: NextRequest) {
       return zodErrorResponse(parsed.error);
     }
 
-    const decoded = await verifyFirebaseIdToken(parsed.data.idToken);
-    const phone = decoded.phone_number
-      ? normalizeIndianMobile(decoded.phone_number)
-      : null;
+    let phone: string | null = null;
+    if (parsed.data.registrationToken) {
+      const registration = await verifyRegistrationToken(
+        parsed.data.registrationToken
+      );
+      if (!registration) {
+        return jsonError("Registration session expired. Please sign in again.", 401);
+      }
+      phone = registration.phone;
+    } else if (parsed.data.idToken) {
+      const decoded = await verifyFirebaseIdToken(parsed.data.idToken);
+      phone = decoded.phone_number
+        ? normalizeIndianMobile(decoded.phone_number)
+        : null;
+    }
     if (!phone) {
       return jsonError("Phone number was not verified", 400);
     }

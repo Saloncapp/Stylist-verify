@@ -8,6 +8,7 @@ import {
   homePathForRole,
 } from "@/lib/auth";
 import { verifyFirebaseIdToken } from "@/lib/firebase-admin";
+import { verifyRegistrationToken } from "@/lib/registration-token";
 import { otpRegisterSchema } from "@/lib/validations";
 import { jsonError, jsonSuccess, zodErrorResponse } from "@/lib/api";
 import { normalizeIndianMobile } from "@/lib/phone";
@@ -60,7 +61,21 @@ export async function POST(request: NextRequest) {
     }
 
     const data = parsed.data;
-    const decoded = await verifyFirebaseIdToken(data.idToken);
+    let decoded: Awaited<ReturnType<typeof verifyFirebaseIdToken>>;
+    if (data.registrationToken) {
+      const registration = await verifyRegistrationToken(data.registrationToken);
+      if (!registration) {
+        return jsonError("Registration session expired. Please sign in again.", 401);
+      }
+      decoded = {
+        uid: registration.uid,
+        phone_number: `+91${registration.phone}`,
+      } as Awaited<ReturnType<typeof verifyFirebaseIdToken>>;
+    } else if (data.idToken) {
+      decoded = await verifyFirebaseIdToken(data.idToken);
+    } else {
+      return jsonError("Registration session is invalid. Please sign in again.", 400);
+    }
     const phone = decoded.phone_number
       ? normalizeIndianMobile(decoded.phone_number)
       : null;
@@ -114,6 +129,7 @@ export async function POST(request: NextRequest) {
         {
           role: "salon" as const,
           redirectTo: homePathForRole("salon"),
+          token,
           salon: toSalonUser(salon),
         },
         201
@@ -203,6 +219,7 @@ export async function POST(request: NextRequest) {
       {
         role: "stylist" as const,
         redirectTo: homePathForRole("stylist"),
+        token,
         stylist: toStylistAccount({
           ...stylist.toObject(),
           aadhaarMasked,

@@ -40,6 +40,7 @@ export default async function StylistHomePage() {
     applications:
       statusCounts.Interested + statusCounts.Hired + statusCounts.Rejected,
     interested: statusCounts.Interested,
+    invites: 0,
     employment: stylist.employmentHistory?.length ?? 0,
   };
 

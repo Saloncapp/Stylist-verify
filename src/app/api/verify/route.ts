@@ -1,11 +1,9 @@
 import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/db";
-import { getSession } from "@/lib/auth";
 import { verifySchema } from "@/lib/validations";
 import { jsonError, jsonSuccess, zodErrorResponse } from "@/lib/api";
 import {
   buildPublicStylistPreview,
-  buildVerifiedStylistFromRecords,
   buildVerifyQuery,
   groupRecordsByAadhaar,
 } from "@/lib/verify";
@@ -39,27 +37,16 @@ export async function POST(request: NextRequest) {
     const groups = isAadhaarSearch
       ? [records]
       : groupRecordsByAadhaar(records);
-    const session = await getSession();
 
-    // Logged-out users get a privacy-safe preview only — no contact, salon, or document data
-    if (!session) {
-      return jsonSuccess({
-        found: true,
-        locked: true,
-        count: groups.length,
-        multiple: groups.length > 1,
-        stylists: [],
-        previews: groups.map(buildPublicStylistPreview),
-      });
-    }
-
-    const stylists = groups.map(buildVerifiedStylistFromRecords);
-
+    // Public verify always returns a privacy-safe preview only.
+    // Full details are available via POST /api/verify/private (salon auth).
     return jsonSuccess({
       found: true,
-      locked: false,
-      stylists,
-      multiple: stylists.length > 1,
+      locked: true,
+      count: groups.length,
+      multiple: groups.length > 1,
+      stylists: [],
+      previews: groups.map(buildPublicStylistPreview),
     });
   } catch (error) {
     console.error("Verify error:", error);

@@ -264,6 +264,9 @@ export interface DashboardStats {
 export interface StylistDashboardStats {
   openJobs: number;
   applications: number;
+  /** Application status Interested count (web dashboard). */
   interested: number;
+  /** Pending salon interest invites (mobile dashboard). */
+  invites: number;
   employment: number;
 }
