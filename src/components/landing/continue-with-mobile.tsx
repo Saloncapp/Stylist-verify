@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -446,6 +447,14 @@ export function ContinueWithMobileForm() {
                 phoneInputId="home-auth-phone"
                 otpInputId="home-auth-otp"
               />
+              <div className="mt-4 text-center">
+                <Link
+                  href="/recover"
+                  className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+                >
+                  Recover Account
+                </Link>
+              </div>
             </StepShell>
           )}
 

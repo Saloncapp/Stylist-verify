@@ -46,6 +46,11 @@ import { handleDigitInput } from "@/lib/digit-input";
 import { indianMobileSchema, stylistCreateSchema } from "@/lib/validations";
 import { cn } from "@/lib/utils";
 import { StylistAvatar } from "@/components/stylist-avatar";
+import {
+  SalonStylistPhoneField,
+  isPhoneVerifiedFor,
+  type PhoneVerificationState,
+} from "@/components/dashboard/salon-stylist-phone-field";
 import { toast } from "sonner";
 import type { HiringApplicationCard } from "@/types";
 
@@ -336,6 +341,11 @@ export function AddStylistDialog({
   );
   const [additionalSource, setAdditionalSource] =
     useState<AdditionalSource>(null);
+  const [phoneVerification, setPhoneVerification] =
+    useState<PhoneVerificationState>({
+      verifiedPhone: null,
+      phoneVerificationToken: null,
+    });
 
   const lookupForm = useForm<z.infer<typeof lookupSchema>>({
     resolver: zodResolver(lookupSchema),
@@ -368,6 +378,10 @@ export function AddStylistDialog({
     setLookingUp(false);
     setSubmitting(false);
     setAdditionalSource(null);
+    setPhoneVerification({
+      verifiedPhone: null,
+      phoneVerificationToken: null,
+    });
     lookupForm.reset({
       lookupType: "aadhaar",
       aadhaarNumber: "",
@@ -487,6 +501,10 @@ export function AddStylistDialog({
           mobileNumber: queryMobile,
         });
         setDraft(seed);
+        setPhoneVerification({
+          verifiedPhone: null,
+          phoneVerificationToken: null,
+        });
         step1Form.reset({
           aadhaarNumber: seed.aadhaarNumber,
           mobileNumber: seed.mobileNumber,
@@ -692,6 +710,12 @@ export function AddStylistDialog({
   }
 
   async function submitCreateWithDraft(payloadDraft: CreateDraft) {
+    if (!isPhoneVerifiedFor(payloadDraft.mobileNumber, phoneVerification)) {
+      toast.error("Verify the stylist's mobile number before adding them");
+      setStep("create1");
+      return;
+    }
+
     setSubmitting(true);
     try {
       const payload = {
@@ -700,6 +724,7 @@ export function AddStylistDialog({
         role: payloadDraft.role || undefined,
         employmentType: payloadDraft.employmentType || undefined,
         status: payloadDraft.status || undefined,
+        phoneVerificationToken: phoneVerification.phoneVerificationToken!,
       };
       const parsed = stylistCreateSchema.safeParse(payload);
       if (!parsed.success) {
@@ -781,6 +806,16 @@ export function AddStylistDialog({
     }
   }
 
+  const createMobile = step1Form.watch("mobileNumber") ?? "";
+  const createMobileVerified = isPhoneVerifiedFor(
+    createMobile,
+    phoneVerification
+  );
+  const draftMobileVerified = isPhoneVerifiedFor(
+    draft.mobileNumber,
+    phoneVerification
+  );
+
   const busy = lookingUp || submitting || uploading;
 
   return (
@@ -809,7 +844,7 @@ export function AddStylistDialog({
               {!hireApplication && step === "existing" &&
                 "Review the profile, edit details if needed, then add them to your salon."}
               {step === "create1" &&
-                "Enter the required details. You can create now, or open optional additional information."}
+                "Enter the required details and verify the stylist's mobile number. You can create now, or open optional additional information."}
               {step === "create2" &&
                 "Optional additional information — go back anytime; your details stay saved."}
             </DialogDescription>
@@ -1198,22 +1233,24 @@ export function AddStylistDialog({
                       </p>
                     )}
                   </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="create-mobile">Mobile Number</Label>
-                    <Input
-                      id="create-mobile"
-                      inputMode="numeric"
-                      maxLength={10}
-                      {...step1Form.register("mobileNumber", {
-                        onChange: (e) => handleDigitInput(e, 10),
-                      })}
-                    />
-                    {step1Form.formState.errors.mobileNumber && (
-                      <p className="text-sm text-destructive">
-                        {step1Form.formState.errors.mobileNumber.message}
-                      </p>
-                    )}
-                  </div>
+                  <SalonStylistPhoneField
+                    phone={createMobile}
+                    onPhoneChange={(next) =>
+                      step1Form.setValue("mobileNumber", next, {
+                        shouldValidate: true,
+                      })
+                    }
+                    verification={phoneVerification}
+                    onVerificationChange={setPhoneVerification}
+                    inputId="create-mobile"
+                    label="Mobile Number"
+                    description="Required for new stylists — verify ownership before adding."
+                  />
+                  {step1Form.formState.errors.mobileNumber && (
+                    <p className="text-sm text-destructive">
+                      {step1Form.formState.errors.mobileNumber.message}
+                    </p>
+                  )}
                   <div className="space-y-1.5">
                     <Label htmlFor="create-name">Full Name</Label>
                     <Input id="create-name" {...step1Form.register("name")} />
@@ -1293,8 +1330,8 @@ export function AddStylistDialog({
 
                   <button
                     type="button"
-                    className="flex w-full items-center justify-between rounded-xl border border-border bg-muted/30 px-4 py-3 text-left transition-colors hover:bg-muted/50"
-                    disabled={busy}
+                    className="flex w-full items-center justify-between rounded-xl border border-border bg-muted/30 px-4 py-3 text-left transition-colors hover:bg-muted/50 disabled:pointer-events-none disabled:opacity-50"
+                    disabled={busy || !createMobileVerified}
                     onClick={() => {
                       void step1Form.handleSubmit(goToAdditional)();
                     }}
@@ -1318,7 +1355,11 @@ export function AddStylistDialog({
                       <ArrowLeft className="mr-2 size-4" />
                       Back
                     </Button>
-                    <Button type="submit" className="h-10" disabled={busy}>
+                    <Button
+                      type="submit"
+                      className="h-10"
+                      disabled={busy || !createMobileVerified}
+                    >
                       {submitting && (
                         <Loader2 className="mr-2 size-4 animate-spin" />
                       )}
@@ -1536,7 +1577,7 @@ export function AddStylistDialog({
                     <Button
                       type="button"
                       className="h-10"
-                      disabled={busy}
+                      disabled={busy || !draftMobileVerified}
                       onClick={() => void submitCreate()}
                     >
                       {submitting && (

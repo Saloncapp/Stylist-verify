@@ -13,6 +13,8 @@ import {
 } from "@/lib/stylist-employment";
 import { buildEmploymentEntry } from "@/lib/stylist-employment-write";
 import { salonSnapshotFromSalon } from "@/lib/salon-sync";
+import { assertSalonPhoneVerification } from "@/lib/phone-verification-token";
+import { normalizeIndianMobile } from "@/lib/phone";
 import Salon from "@/models/Salon";
 import Stylist from "@/models/Stylist";
 
@@ -97,18 +99,35 @@ export async function POST(request: NextRequest) {
     }
 
     const aadhaarHash = hashAadhaar(data.aadhaarNumber);
-    const existing = await Stylist.findOne({
+    const existingByAadhaar = await Stylist.findOne({
       $or: [{ aadhaarHash }, { aadhaarNumber: data.aadhaarNumber }],
+    });
+    const existingByMobile = await Stylist.findOne({
+      mobileNumber: data.mobileNumber,
     });
 
     if (
-      !existing &&
-      (await Stylist.findOne({ mobileNumber: data.mobileNumber }))
+      existingByAadhaar &&
+      existingByMobile &&
+      String(existingByAadhaar._id) !== String(existingByMobile._id)
     ) {
       return jsonError(
-        "A stylist profile with this phone number already exists",
+        "Aadhaar and mobile number belong to different stylist profiles",
         409
       );
+    }
+
+    const existing = existingByAadhaar ?? existingByMobile;
+
+    if (!existing) {
+      const phoneCheck = await assertSalonPhoneVerification({
+        token: data.phoneVerificationToken,
+        salonId: session.salonId,
+        phone: normalizeIndianMobile(data.mobileNumber) ?? data.mobileNumber,
+      });
+      if (!phoneCheck.ok) {
+        return jsonError(phoneCheck.message, 403);
+      }
     }
 
     if (existing && existing.mobileNumber !== data.mobileNumber) {

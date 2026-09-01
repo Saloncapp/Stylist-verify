@@ -4,6 +4,7 @@ import { connectDB } from "@/lib/db";
 import { requireSalonSession, toSalonUser } from "@/lib/auth";
 import Salon from "@/models/Salon";
 import { SalonProfileForm } from "@/components/dashboard/salon-profile-form";
+import { AccountSettingsLinks } from "@/components/account/account-settings-links";
 
 export const metadata: Metadata = {
   title: "Salon Profile",
@@ -27,11 +28,12 @@ export default async function SalonProfilePage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Salon Profile</h1>
         <p className="text-muted-foreground">
-          Update your salon details. Phone number is your login identity and
-          cannot be changed here.
+          View and update your salon details. Manage login and recovery options
+          under Account Security.
         </p>
       </div>
       <SalonProfileForm initialSalon={toSalonUser(salon)} />
+      <AccountSettingsLinks securityHref="/dashboard/security" />
     </div>
   );
 }

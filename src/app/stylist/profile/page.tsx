@@ -5,6 +5,7 @@ import { requireStylistSession, toStylistAccount } from "@/lib/auth";
 import { getAadhaarFromRecord, maskAadhaar } from "@/lib/aadhaar-crypto";
 import Stylist from "@/models/Stylist";
 import { StylistSelfProfileForm } from "@/components/stylist/stylist-self-profile-form";
+import { AccountSettingsLinks } from "@/components/account/account-settings-links";
 
 export const metadata: Metadata = {
   title: "Profile",
@@ -35,8 +36,8 @@ export default async function StylistProfilePage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Profile</h1>
         <p className="text-muted-foreground">
-          Update your name, address, and photo. Employment history is managed by
-          salons.
+          Update your name, address, and photo. Manage login and recovery under
+          Account Security.
         </p>
       </div>
       <StylistSelfProfileForm
@@ -45,6 +46,7 @@ export default async function StylistProfilePage() {
           aadhaarMasked,
         })}
       />
+      <AccountSettingsLinks securityHref="/stylist/security" />
     </div>
   );
 }

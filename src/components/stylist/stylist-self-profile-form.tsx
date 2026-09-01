@@ -175,7 +175,7 @@ export function StylistSelfProfileForm({
                 readOnly
               />
               <p className="text-xs text-muted-foreground">
-                Phone is your login identity and cannot be changed here.
+                Change your login number from Account Security in profile settings.
               </p>
             </div>
 
@@ -238,6 +238,7 @@ export function StylistSelfProfileForm({
         title="Crop profile photo"
         description="Adjust the crop area, then confirm to upload."
       />
+
     </>
   );
 }

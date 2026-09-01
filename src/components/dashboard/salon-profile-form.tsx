@@ -39,6 +39,7 @@ const ImageCropDialog = dynamic(
 
 export function SalonProfileForm({ initialSalon }: { initialSalon: SalonUser }) {
   const [salon, setSalon] = useState(initialSalon);
+  const [editing, setEditing] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [cropSrc, setCropSrc] = useState("");
   const [cropOpen, setCropOpen] = useState(false);
@@ -56,7 +57,6 @@ export function SalonProfileForm({ initialSalon }: { initialSalon: SalonUser }) 
       salonName: salon.salonName,
       ownerName: salon.ownerName,
       email: salon.email,
-      staffCount: salon.staffCount,
       salonType: salon.salonType,
       logoUrl: salon.logoUrl ?? "",
       salonAddress: salon.salonAddress ?? "",
@@ -134,7 +134,6 @@ export function SalonProfileForm({ initialSalon }: { initialSalon: SalonUser }) 
       salonName: salon.salonName,
       ownerName: salon.ownerName,
       email: salon.email,
-      staffCount: salon.staffCount,
       salonType: salon.salonType,
       logoUrl: salon.logoUrl ?? "",
       salonAddress: salon.salonAddress ?? "",
@@ -155,7 +154,10 @@ export function SalonProfileForm({ initialSalon }: { initialSalon: SalonUser }) 
       const res = await fetch("/api/salon/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          staffCount: salon.staffCount,
+        }),
       });
 
       const result = await res.json();
@@ -166,10 +168,32 @@ export function SalonProfileForm({ initialSalon }: { initialSalon: SalonUser }) 
       }
 
       setSalon(result.data.salon);
+      setEditing(false);
       toast.success("Profile updated successfully");
     } catch {
       toast.error("Something went wrong");
     }
+  }
+
+  function cancelEditing() {
+    reset({
+      salonName: salon.salonName,
+      ownerName: salon.ownerName,
+      email: salon.email,
+      salonType: salon.salonType,
+      logoUrl: salon.logoUrl ?? "",
+      salonAddress: salon.salonAddress ?? "",
+      googleMapsLocation: salon.googleMapsLocation ?? "",
+      websiteUrl: salon.websiteUrl ?? "",
+      instagramUrl: salon.instagramUrl ?? "",
+      facebookUrl: salon.facebookUrl ?? "",
+      whatsappNumber: salon.whatsappNumber ?? "",
+      youtubeUrl: salon.youtubeUrl ?? "",
+      establishmentYear: salon.establishmentYear
+        ? String(salon.establishmentYear)
+        : "",
+    });
+    setEditing(false);
   }
 
   return (
@@ -184,11 +208,62 @@ export function SalonProfileForm({ initialSalon }: { initialSalon: SalonUser }) 
       />
 
       <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle>Salon Details</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onProfileSubmit)} className="space-y-4">
+        <CardContent className="flex flex-col gap-4 pt-6 sm:flex-row sm:items-center">
+          <div className="relative flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-muted">
+            {salon.logoUrl ? (
+              <Image
+                src={salon.logoUrl}
+                alt={`${salon.salonName} logo`}
+                fill
+                className="object-cover"
+              />
+            ) : (
+              <Store className="size-7 text-muted-foreground" />
+            )}
+          </div>
+          <div className="min-w-0 flex-1 space-y-1">
+            <h2 className="text-lg font-semibold tracking-tight">
+              {salon.salonName}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Login phone: {salon.salonNumber}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {!editing ? (
+        <Card className="shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0 pb-2">
+            <CardTitle className="text-base">Salon Profile</CardTitle>
+            <Button type="button" size="sm" onClick={() => setEditing(true)}>
+              Edit Profile
+            </Button>
+          </CardHeader>
+          <CardContent className="divide-y divide-border/60">
+            <ProfileField label="Address">
+              <p className="whitespace-pre-wrap leading-relaxed">
+                {salon.salonAddress?.trim() || "—"}
+              </p>
+            </ProfileField>
+            <ProfileField label="Owner Name">
+              {salon.ownerName?.trim() || "—"}
+            </ProfileField>
+            <ProfileField label="Email">
+              {salon.email?.trim() || "—"}
+            </ProfileField>
+            <ProfileField label="Salon Type">
+              <SalonTypeBadge type={salon.salonType} />
+            </ProfileField>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle>Edit Salon Profile</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit(onProfileSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label>Salon Logo (optional)</Label>
               <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
@@ -304,39 +379,6 @@ export function SalonProfileForm({ initialSalon }: { initialSalon: SalonUser }) 
               />
               {errors.email && (
                 <p className="text-sm text-danger">{errors.email.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="profile-loginPhone">Login Phone</Label>
-              <Input
-                id="profile-loginPhone"
-                type="text"
-                readOnly
-                disabled
-                value={salon.salonNumber}
-                className="bg-muted"
-              />
-              <p className="text-xs text-muted-foreground">
-                This is your login phone number and cannot be changed here.
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="profile-staffCount">
-                Staff Count{" "}
-                <span className="font-normal text-muted-foreground">
-                  (optional)
-                </span>
-              </Label>
-              <Input
-                id="profile-staffCount"
-                type="number"
-                min={1}
-                {...register("staffCount", { valueAsNumber: true })}
-              />
-              {errors.staffCount && (
-                <p className="text-sm text-danger">{errors.staffCount.message}</p>
               )}
             </div>
 
@@ -507,15 +549,43 @@ export function SalonProfileForm({ initialSalon }: { initialSalon: SalonUser }) 
               </div>
             </div>
 
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting && (
-                <Loader2 className="mr-2 size-4 animate-spin" />
-              )}
-              Save Changes
-            </Button>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isSubmitting}
+                onClick={cancelEditing}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting && (
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                )}
+                Save Changes
+              </Button>
+            </div>
           </form>
         </CardContent>
       </Card>
+      )}
+    </div>
+  );
+}
+
+function ProfileField({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="py-3 first:pt-0 last:pb-0">
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
+      <div className="mt-1 text-sm text-foreground">{children}</div>
     </div>
   );
 }

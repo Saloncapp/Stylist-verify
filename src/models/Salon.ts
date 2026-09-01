@@ -9,6 +9,9 @@ export interface ISalon extends Document {
   salonNumber: string;
   salonAddress: string;
   firebaseUid?: string;
+  recoveryPinHash?: string;
+  recoveryPinFailedAttempts?: number;
+  recoveryPinLockedUntil?: Date;
   logoUrl?: string;
   salonType: SalonType;
   googleMapsLocation?: string;
@@ -36,6 +39,9 @@ const SalonSchema = new Schema<ISalon>(
     },
     salonAddress: { type: String, required: true, trim: true },
     firebaseUid: { type: String, sparse: true, unique: true },
+    recoveryPinHash: { type: String, select: false },
+    recoveryPinFailedAttempts: { type: Number, default: 0 },
+    recoveryPinLockedUntil: { type: Date },
     logoUrl: { type: String, default: "" },
     salonType: {
       type: String,

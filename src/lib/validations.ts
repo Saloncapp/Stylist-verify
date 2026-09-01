@@ -235,7 +235,11 @@ function requireWorkingFrom(
   }
 }
 
-export const stylistCreateSchema = stylistBaseSchema.superRefine((data, ctx) => {
+export const stylistCreateSchema = stylistBaseSchema
+  .extend({
+    phoneVerificationToken: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
   if (
     (data.status === "Relieved" || data.status === "Abscond") &&
     (!data.remark || data.remark.trim().length < 5)

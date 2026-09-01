@@ -54,6 +54,9 @@ export interface IStylist extends Document {
   name: string;
   mobileNumber: string;
   firebaseUid?: string;
+  recoveryPinHash?: string;
+  recoveryPinFailedAttempts?: number;
+  recoveryPinLockedUntil?: Date;
   address?: string;
   photoUrl?: string;
   openToWork: boolean;
@@ -132,6 +135,9 @@ const StylistSchema = new Schema<IStylist>(
     name: { type: String, required: true, trim: true },
     mobileNumber: { type: String, required: true, unique: true },
     firebaseUid: { type: String, sparse: true, unique: true },
+    recoveryPinHash: { type: String, select: false },
+    recoveryPinFailedAttempts: { type: Number, default: 0 },
+    recoveryPinLockedUntil: { type: Date },
     address: { type: String, default: "" },
     photoUrl: { type: String, default: "" },
     openToWork: { type: Boolean, default: false },
