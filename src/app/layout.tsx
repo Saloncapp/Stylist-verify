@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { themeInitScript } from "@/lib/theme-script";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
@@ -25,6 +26,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} h-full`} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{ __html: themeInitScript }}
+          suppressHydrationWarning
+        />
+      </head>
       <body className="min-h-full flex flex-col font-sans antialiased">
         <ThemeProvider>
           {children}

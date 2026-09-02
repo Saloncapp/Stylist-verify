@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
-import { Users } from "lucide-react";
+import { Loader2, Users } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { VerifiedStylistView } from "@/components/verify/verified-stylist-view";
 import {
@@ -12,7 +12,7 @@ import {
   type StylistSearchType,
 } from "@/components/verify/stylist-search-card";
 import { verifyFormSchema, type VerifyFormInput } from "@/lib/validations";
-import { handleDigitInput } from "@/lib/digit-input";
+import { sanitizeDigits } from "@/lib/digit-input";
 import type { VerifiedStylistPrivateResult } from "@/types";
 import { toast } from "sonner";
 
@@ -64,15 +64,19 @@ export function VerifyStylistForm({ embedded = false }: { embedded?: boolean }) 
   const searchType = watch("searchType");
 
   async function onSubmit(data: VerifyFormInput) {
+    setSearched(false);
+    setResult(null);
+
     try {
       const payload =
         data.searchType === "aadhaar"
-          ? { aadhaarNumber: data.aadhaarNumber }
-          : { mobileNumber: data.mobileNumber };
+          ? { aadhaarNumber: data.aadhaarNumber?.trim() }
+          : { mobileNumber: data.mobileNumber?.trim() };
 
       const res = await fetch("/api/verify/private", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(payload),
       });
 
@@ -111,13 +115,40 @@ export function VerifyStylistForm({ embedded = false }: { embedded?: boolean }) 
         idPrefix="dashboard-"
         aadhaarError={errors.aadhaarNumber?.message}
         mobileError={errors.mobileNumber?.message}
-        aadhaarInputProps={register("aadhaarNumber", {
-          onChange: (e) => handleDigitInput(e, 12),
-        })}
-        mobileInputProps={register("mobileNumber", {
-          onChange: (e) => handleDigitInput(e, 10),
-        })}
+        aadhaarInputProps={{
+          ...register("aadhaarNumber"),
+          onChange: (e) => {
+            const next = sanitizeDigits(e.target.value, 12);
+            e.target.value = next;
+            setValue("aadhaarNumber", next, {
+              shouldValidate: true,
+              shouldDirty: true,
+            });
+          },
+        }}
+        mobileInputProps={{
+          ...register("mobileNumber"),
+          onChange: (e) => {
+            const next = sanitizeDigits(e.target.value, 10);
+            e.target.value = next;
+            setValue("mobileNumber", next, {
+              shouldValidate: true,
+              shouldDirty: true,
+            });
+          },
+        }}
       />
+
+      {isSubmitting ? (
+        <div
+          className="flex items-center justify-center gap-2 py-2"
+          role="status"
+          aria-live="polite"
+        >
+          <Loader2 className="size-5 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Verifying…</p>
+        </div>
+      ) : null}
 
       {searched && result && !result.found && (
         <motion.div

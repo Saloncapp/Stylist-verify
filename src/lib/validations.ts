@@ -260,11 +260,11 @@ export function createStylistProfileUpdateSchema(currentStatus: string) {
     if (data.status === currentStatus) return;
     if (
       (data.status === "Relieved" || data.status === "Abscond") &&
-      (!data.remark || data.remark.trim().length < 5)
+      !data.remark?.trim()
     ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Remark is required (minimum 5 characters)",
+        message: "Remark is required",
         path: ["remark"],
       });
     }

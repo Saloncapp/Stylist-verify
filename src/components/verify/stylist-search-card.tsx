@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -166,14 +166,8 @@ export function StylistSearchCard({
                 disabled={isSubmitting}
                 className="h-full shrink-0 rounded-none border-0 border-l border-primary/30 px-4 shadow-none sm:min-w-[7.5rem]"
               >
-                {isSubmitting ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <>
-                    <Search className="mr-2 size-4" />
-                    {submitLabel}
-                  </>
-                )}
+                <Search className="mr-2 size-4" />
+                {submitLabel}
               </Button>
             </div>
 
