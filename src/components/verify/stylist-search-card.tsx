@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAutofocusById } from "@/hooks/use-autofocus";
 import { cn } from "@/lib/utils";
 
 export type StylistSearchType = "aadhaar" | "mobile";
@@ -21,6 +22,7 @@ interface StylistSearchCardProps {
   idPrefix?: string;
   submitLabel?: string;
   className?: string;
+  autoFocus?: boolean;
 }
 
 const SEARCH_TABS = [
@@ -48,11 +50,18 @@ export function StylistSearchCard({
   idPrefix = "",
   submitLabel = "Verify",
   className,
+  autoFocus = false,
 }: StylistSearchCardProps) {
   const aadhaarId = `${idPrefix}aadhaarNumber`;
   const mobileId = `${idPrefix}mobileNumber`;
   const activeError =
     searchType === "aadhaar" ? aadhaarError : mobileError;
+
+  useAutofocusById(
+    searchType === "aadhaar" ? aadhaarId : mobileId,
+    autoFocus,
+    [searchType]
+  );
 
   return (
     <Card

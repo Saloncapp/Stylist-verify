@@ -1,5 +1,6 @@
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
+import { HomeHashScroll } from "@/components/layout/home-hash-scroll";
 import { HeroSection } from "@/components/landing/hero";
 import { WhySection } from "@/components/landing/why-section";
 import { HowItWorksSection } from "@/components/landing/how-it-works";
@@ -10,6 +11,7 @@ export default function HomePage() {
   return (
     <>
       <Navbar />
+      <HomeHashScroll />
       <main className="flex-1">
         <HeroSection />
         <WhySection />

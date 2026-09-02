@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import { ShieldCheck } from "lucide-react";
+import { HomeBrandLink } from "@/components/layout/home-brand-link";
 import { SALON_NAV_ITEMS } from "@/lib/salon-nav";
 import { cn } from "@/lib/utils";
 
@@ -88,8 +89,7 @@ export function DashboardSidebarNav({
 
 export function DashboardSidebarBrand({ onNavigate }: { onNavigate?: () => void }) {
   return (
-    <Link
-      href="/dashboard"
+    <HomeBrandLink
       onClick={onNavigate}
       className="flex min-w-0 items-center gap-2.5 px-1"
     >
@@ -99,6 +99,6 @@ export function DashboardSidebarBrand({ onNavigate }: { onNavigate?: () => void 
       <span className="truncate font-semibold tracking-tight">
         Stylist Verify
       </span>
-    </Link>
+    </HomeBrandLink>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PhoneOtpAuth } from "@/components/auth/phone-otp-auth";
 import { SalonAddressFields } from "@/components/landing/salon-address-fields";
+import { useAutofocusById } from "@/hooks/use-autofocus";
 import { handleDigitInput } from "@/lib/digit-input";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { formatSalonAddress } from "@/lib/india-locations";
@@ -152,6 +153,29 @@ export function ContinueWithMobileForm() {
       name: "",
     },
   });
+
+  useAutofocusById("aadhaarNumber", step === "stylist", [step]);
+
+  const resetToPhoneStep = useCallback(() => {
+    setStep("phone");
+    setPending(null);
+    setAadhaarLookup({ status: "idle" });
+    salonForm.reset({
+      salonName: "",
+      state: "",
+      district: "",
+      city: "",
+      area: "",
+      pinCode: "",
+    });
+    stylistForm.reset({ aadhaarNumber: "", name: "" });
+  }, [salonForm, stylistForm]);
+
+  useEffect(() => {
+    const onHomeHero = () => resetToPhoneStep();
+    window.addEventListener("stylist-verify:home-hero", onHomeHero);
+    return () => window.removeEventListener("stylist-verify:home-hero", onHomeHero);
+  }, [resetToPhoneStep]);
 
   const clearFirebase = useCallback(async () => {
     try {

@@ -93,6 +93,7 @@ export function VerifyForm() {
         onSearchTypeChange={handleSearchTypeChange}
         onSubmit={handleSubmit(onSubmit)}
         isSubmitting={isSubmitting}
+        autoFocus
         aadhaarError={errors.aadhaarNumber?.message}
         mobileError={errors.mobileNumber?.message}
         aadhaarInputProps={register("aadhaarNumber", {

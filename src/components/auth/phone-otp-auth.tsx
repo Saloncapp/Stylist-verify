@@ -15,6 +15,7 @@ import {
   getOrCreateRecaptchaVerifier,
   clearRecaptchaVerifier,
 } from "@/lib/firebase";
+import { useAutofocus } from "@/hooks/use-autofocus";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -89,13 +90,10 @@ export function PhoneOtpAuth({
     return () => clearRecaptchaVerifier(recaptchaId);
   }, [recaptchaId]);
 
-  useEffect(() => {
-    if (!autoFocus || otpSent || disabled) return;
-    const frame = window.requestAnimationFrame(() => {
-      phoneInputRef.current?.focus();
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [autoFocus, otpSent, disabled]);
+  useAutofocus(phoneInputRef, autoFocus && !otpSent && !disabled, [
+    otpSent,
+    disabled,
+  ]);
 
   useEffect(() => {
     if (resendIn <= 0) return;

@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { ShieldCheck } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LinkButton } from "@/components/link-button";
+import { HomeBrandLink, HOME_HERO_HREF } from "@/components/layout/home-brand-link";
 
 interface NavbarProps {
   variant?: "landing" | "auth" | "dashboard";
@@ -11,17 +11,14 @@ export function Navbar({ variant = "landing" }: NavbarProps) {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/80 backdrop-blur-lg">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-        <Link
-          href="/"
-          className="group flex shrink-0 items-center gap-2.5"
-        >
+        <HomeBrandLink className="group flex shrink-0 items-center gap-2.5">
           <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
             <ShieldCheck className="size-5" />
           </div>
           <span className="text-lg font-semibold tracking-tight text-foreground transition-colors group-hover:text-primary">
             Stylist Verify
           </span>
-        </Link>
+        </HomeBrandLink>
 
         {variant === "landing" && (
           <nav className="hidden flex-1 items-center justify-center gap-8 md:flex">
@@ -55,7 +52,7 @@ export function Navbar({ variant = "landing" }: NavbarProps) {
         <div className="ml-auto flex shrink-0 items-center justify-end">
           <ThemeToggle />
           {variant === "auth" && (
-            <LinkButton href="/" variant="ghost" className="ml-2">
+            <LinkButton href={HOME_HERO_HREF} variant="ghost" className="ml-2">
               Home
             </LinkButton>
           )}

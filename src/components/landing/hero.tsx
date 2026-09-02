@@ -4,10 +4,14 @@ import { motion } from "framer-motion";
 import { Search, Shield, Users } from "lucide-react";
 import { LinkButton } from "@/components/link-button";
 import { ContinueWithMobileForm } from "@/components/landing/continue-with-mobile";
+import { HOME_HERO_ID } from "@/components/layout/home-brand-link";
 
 export function HeroSection() {
   return (
-    <section className="relative overflow-hidden px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
+    <section
+      id={HOME_HERO_ID}
+      className="relative scroll-mt-20 overflow-hidden px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24"
+    >
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute left-1/4 top-0 h-[500px] w-[700px] -translate-x-1/2 rounded-full bg-primary/5 blur-3xl" />
         <div className="absolute right-0 top-24 h-[400px] w-[500px] rounded-full bg-primary/[0.03] blur-3xl" />

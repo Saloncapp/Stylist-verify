@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ShieldCheck } from "lucide-react";
+import { HomeBrandLink } from "@/components/layout/home-brand-link";
 
 export function Footer() {
   return (
@@ -7,12 +8,12 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid gap-8 md:grid-cols-3">
           <div>
-            <div className="flex items-center gap-2.5">
+            <HomeBrandLink className="inline-flex items-center gap-2.5 transition-opacity hover:opacity-90">
               <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                 <ShieldCheck className="size-4" />
               </div>
               <span className="font-semibold">Stylist Verify</span>
-            </div>
+            </HomeBrandLink>
             <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
               A trusted employment verification platform for the salon industry.
               Make informed hiring decisions with verified stylist records.

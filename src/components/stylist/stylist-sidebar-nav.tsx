@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import { ShieldCheck } from "lucide-react";
+import { HomeBrandLink } from "@/components/layout/home-brand-link";
 import { STYLIST_NAV_ITEMS } from "@/lib/stylist-nav";
 import { cn } from "@/lib/utils";
 
@@ -91,8 +92,7 @@ export function StylistSidebarBrand({
   onNavigate?: () => void;
 }) {
   return (
-    <Link
-      href="/stylist"
+    <HomeBrandLink
       onClick={onNavigate}
       className="flex min-w-0 items-center gap-2.5 px-1"
     >
@@ -102,6 +102,6 @@ export function StylistSidebarBrand({
       <span className="truncate font-semibold tracking-tight">
         Stylist Verify
       </span>
-    </Link>
+    </HomeBrandLink>
   );
 }

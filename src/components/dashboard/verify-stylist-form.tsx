@@ -112,6 +112,7 @@ export function VerifyStylistForm({ embedded = false }: { embedded?: boolean }) 
         onSearchTypeChange={handleSearchTypeChange}
         onSubmit={handleSubmit(onSubmit)}
         isSubmitting={isSubmitting}
+        autoFocus
         idPrefix="dashboard-"
         aadhaarError={errors.aadhaarNumber?.message}
         mobileError={errors.mobileNumber?.message}
