@@ -301,7 +301,7 @@ export function ContinueWithMobileForm() {
         return;
       }
       toast.success("Salon account created");
-      router.push(result.data.redirectTo as string);
+      router.push("/setup-recovery-pin");
       router.refresh();
     } catch {
       toast.error("Something went wrong");
@@ -340,7 +340,7 @@ export function ContinueWithMobileForm() {
           ? "Existing stylist profile linked"
           : "Stylist account created"
       );
-      router.push(result.data.redirectTo as string);
+      router.push("/setup-recovery-pin");
       router.refresh();
     } catch {
       toast.error("Something went wrong");

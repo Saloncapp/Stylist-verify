@@ -5,7 +5,7 @@ import {
   setSessionCookie,
   toSalonUser,
   toStylistAccount,
-  homePathForRole,
+  SETUP_RECOVERY_PIN_PATH,
 } from "@/lib/auth";
 import { verifyFirebaseIdToken } from "@/lib/firebase-admin";
 import { verifyRegistrationToken } from "@/lib/registration-token";
@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
       return jsonSuccess(
         {
           role: "salon" as const,
-          redirectTo: homePathForRole("salon"),
+          redirectTo: SETUP_RECOVERY_PIN_PATH,
           token,
           salon: toSalonUser(salon),
         },
@@ -218,7 +218,7 @@ export async function POST(request: NextRequest) {
     return jsonSuccess(
       {
         role: "stylist" as const,
-        redirectTo: homePathForRole("stylist"),
+        redirectTo: SETUP_RECOVERY_PIN_PATH,
         token,
         stylist: toStylistAccount({
           ...stylist.toObject(),

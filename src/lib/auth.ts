@@ -123,6 +123,8 @@ export async function requireStylistSession(): Promise<SessionPayload | null> {
   return session;
 }
 
+export const SETUP_RECOVERY_PIN_PATH = "/setup-recovery-pin";
+
 export function homePathForRole(role: UserRole): string {
   return role === "salon" ? "/dashboard" : "/stylist";
 }

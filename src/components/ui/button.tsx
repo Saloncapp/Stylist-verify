@@ -40,12 +40,19 @@ const buttonVariants = cva(
   }
 )
 
+type ButtonProps = ButtonPrimitive.Props &
+  VariantProps<typeof buttonVariants> & {
+    /** Radix-style prop; ignored — use LinkButton or `render` for composition. */
+    asChild?: boolean
+  }
+
 function Button({
   className,
   variant = "default",
   size = "default",
+  asChild: _asChild,
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+}: ButtonProps) {
   return (
     <ButtonPrimitive
       data-slot="button"

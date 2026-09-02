@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { handleDigitInput } from "@/lib/digit-input";
 import { toast } from "sonner";
+import { clearRecoveryPinReminderDismissal } from "@/lib/recovery-pin-reminder";
 
 type Props = {
   open: boolean;
@@ -194,6 +195,7 @@ export function RecoveryPinDialog({
         setError(message);
         return;
       }
+      clearRecoveryPinReminderDismissal();
       toast.success(
         mode === "create"
           ? "Recovery PIN created successfully"

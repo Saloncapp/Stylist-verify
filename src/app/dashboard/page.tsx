@@ -10,6 +10,7 @@ import { stylistAccessibleBySalonQuery } from "@/lib/stylist-employment";
 import Stylist from "@/models/Stylist";
 import { StatsCards } from "@/components/dashboard/stats-cards";
 import { DashboardHiringPanels } from "@/components/dashboard/dashboard-hiring-panels";
+import { RecoveryPinReminder } from "@/components/account/recovery-pin-reminder";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -48,6 +49,8 @@ export default async function DashboardPage() {
           Overview of your salon activity and hiring pipeline
         </p>
       </div>
+
+      <RecoveryPinReminder />
 
       <StatsCards stats={stats} />
 

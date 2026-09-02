@@ -11,6 +11,7 @@ import Stylist from "@/models/Stylist";
 import { LinkButton } from "@/components/link-button";
 import { StylistDashboardPanels } from "@/components/stylist/stylist-dashboard-panels";
 import { StylistStatsCards } from "@/components/stylist/stylist-stats-cards";
+import { RecoveryPinReminder } from "@/components/account/recovery-pin-reminder";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -57,6 +58,8 @@ export default async function StylistHomePage() {
           Browse Jobs
         </LinkButton>
       </div>
+
+      <RecoveryPinReminder />
 
       <StylistStatsCards stats={stats} />
 
