@@ -13,7 +13,5 @@ export default async function SalonSecurityPage() {
     redirect("/");
   }
 
-  return (
-    <AccountSecurityPanel backHref="/dashboard/profile" />
-  );
+  return <AccountSecurityPanel />;
 }

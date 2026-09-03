@@ -7,7 +7,7 @@ import { resolveAccountPhoneContext } from "@/lib/phone-change";
 
 function maskPhone(phone: string) {
   if (phone.length !== 10) return phone;
-  return `${phone.slice(0, 2)}******${phone.slice(-2)}`;
+  return `********${phone.slice(-2)}`;
 }
 
 export async function POST(_request: NextRequest) {

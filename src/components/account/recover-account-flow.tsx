@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { AlertCircle, ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { handleDigitInput } from "@/lib/digit-input";
 import { normalizeIndianMobile } from "@/lib/phone";
 import {
@@ -70,7 +68,20 @@ function ErrorBanner({ message }: { message: string }) {
   );
 }
 
-export function RecoverAccountFlow() {
+export type RecoverAccountFlowProps = {
+  /** When true, renders inside the home Continue-with-Mobile card (no outer page Card). */
+  embedded?: boolean;
+  /** Return to phone OTP / sign-in step. */
+  onBackToSignIn?: () => void;
+  /** After recovery completes — typically return to phone OTP to sign in. */
+  onCompleteSignIn?: () => void;
+};
+
+export function RecoverAccountFlow({
+  embedded = false,
+  onBackToSignIn,
+  onCompleteSignIn,
+}: RecoverAccountFlowProps = {}) {
   const [step, setStep] = useState<RecoverAccountStep>("verify-identity");
   const [oldPhone, setOldPhone] = useState("");
   const [pin, setPin] = useState("");
@@ -104,8 +115,28 @@ export function RecoverAccountFlow() {
     setResendIn(0);
   }
 
+  function handleBackToSignIn() {
+    if (onBackToSignIn) {
+      onBackToSignIn();
+      return;
+    }
+    window.location.assign("/#continue-with-mobile");
+  }
+
+  function handleCompleteSignIn() {
+    if (onCompleteSignIn) {
+      onCompleteSignIn();
+      return;
+    }
+    window.location.assign("/#continue-with-mobile");
+  }
+
   function goBack() {
     setError(null);
+    if (step === "verify-identity") {
+      handleBackToSignIn();
+      return;
+    }
     if (step === "new-phone") {
       setStep("verify-identity");
       setPinVerifiedToken(null);
@@ -292,18 +323,32 @@ export function RecoverAccountFlow() {
     }
   }
 
-  if (step === "complete") {
-    return (
-      <Card className="mx-auto max-w-lg">
-        <CardContent className="space-y-4 px-6 py-10 text-center">
+  const body = (
+    <div className={cn("space-y-4", embedded && "w-full")}>
+      {step !== "complete" ? (
+        <>
+          <RecoverStepProgress step={step} />
+          <div className="space-y-1">
+            <h2 className="text-base font-semibold text-foreground">
+              {recoverStepTitle(step)}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {recoverStepDescription(step)}
+            </p>
+          </div>
+        </>
+      ) : null}
+
+      {step === "complete" && (
+        <div className="space-y-4 text-center">
           <CheckCircle2
-            className="mx-auto size-12 text-emerald-600"
+            className="mx-auto size-12 text-primary"
             aria-hidden
           />
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold tracking-tight">
+            <h2 className="text-xl font-semibold tracking-tight">
               Recovery Complete
-            </h1>
+            </h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
               {recoverStepDescription("complete")}
             </p>
@@ -316,96 +361,182 @@ export function RecoverAccountFlow() {
               <span className="font-medium text-foreground">
                 {formatPhone(confirmedNewPhone)}
               </span>
-              . A security notification has been recorded on your account.
+              .
             </p>
           </div>
-          <Link href="/" className={cn(buttonVariants(), "h-9 w-full px-4")}>
+          <Button
+            type="button"
+            className="w-full"
+            onClick={handleCompleteSignIn}
+          >
             Sign in with your new number
-          </Link>
-        </CardContent>
-      </Card>
-    );
-  }
+          </Button>
+        </div>
+      )}
 
-  return (
-    <Card className="mx-auto max-w-lg">
-      <CardHeader className="space-y-4">
-        <div>
-          <CardTitle>Recover Account</CardTitle>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            Use your registered mobile number and recovery PIN to regain access
-            when you no longer have your old number.
-          </p>
-        </div>
-        <RecoverStepProgress step={step} />
-        <div className="space-y-1 border-t pt-4">
-          <h2 className="text-base font-semibold">{recoverStepTitle(step)}</h2>
-          <p className="text-sm text-muted-foreground">
-            {recoverStepDescription(step)}
-          </p>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {step === "verify-identity" && (
-          <form className="space-y-4" onSubmit={verifyIdentity}>
+      {step === "verify-identity" && (
+        <form className="space-y-4" onSubmit={verifyIdentity}>
+          <div className="space-y-2">
+            <Label
+              htmlFor="recover-old-phone"
+              className="font-semibold text-primary"
+            >
+              Registered mobile number
+            </Label>
+            <Input
+              id="recover-old-phone"
+              inputMode="numeric"
+              maxLength={10}
+              placeholder="Enter 10-digit registered number"
+              value={oldPhone}
+              onChange={(e) => {
+                handleDigitInput(e, 10);
+                setOldPhone(e.target.value);
+                if (error) setError(null);
+              }}
+              disabled={busy}
+              autoFocus
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="recover-pin" className="font-semibold text-primary">
+              6-digit recovery PIN
+            </Label>
+            <Input
+              id="recover-pin"
+              inputMode="numeric"
+              autoComplete="off"
+              maxLength={6}
+              placeholder="Enter 6-digit recovery PIN"
+              value={pin}
+              onChange={(e) => {
+                handleDigitInput(e, 6);
+                setPin(e.target.value);
+                if (error) setError(null);
+              }}
+              disabled={busy}
+            />
+          </div>
+          {error ? <ErrorBanner message={error} /> : null}
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={goBack}
+              disabled={busy}
+            >
+              <ArrowLeft className="mr-2 size-4" />
+              Back
+            </Button>
+            <Button
+              type="submit"
+              className="flex-1"
+              disabled={
+                busy ||
+                oldPhone.replace(/\D/g, "").length !== 10 ||
+                pin.length !== 6
+              }
+            >
+              {busy ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  Verifying…
+                </>
+              ) : (
+                "Continue"
+              )}
+            </Button>
+          </div>
+        </form>
+      )}
+
+      {step === "new-phone" && (
+        <form
+          className="space-y-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (otpSent) void verifyNewOtp(e);
+            else void sendNewPhoneOtp();
+          }}
+        >
+          <div className="space-y-2">
+            <Label
+              htmlFor="recover-new-phone"
+              className="font-semibold text-primary"
+            >
+              New mobile number
+            </Label>
+            <Input
+              id="recover-new-phone"
+              inputMode="numeric"
+              maxLength={10}
+              placeholder="Enter new 10-digit mobile number"
+              value={newPhone}
+              onChange={(e) => {
+                handleDigitInput(e, 10);
+                setNewPhone(e.target.value);
+                if (error) setError(null);
+                if (otpSent) {
+                  setOtpSent(false);
+                  setOtp("");
+                  setOtpSession(null);
+                }
+              }}
+              disabled={busy}
+              autoFocus={!otpSent}
+            />
+          </div>
+
+          {otpSent ? (
             <div className="space-y-2">
-              <Label htmlFor="recover-old-phone" className="text-primary font-semibold">
-                Registered mobile number
+              <Label htmlFor="recover-otp" className="font-semibold text-primary">
+                One-time password
               </Label>
               <Input
-                id="recover-old-phone"
+                id="recover-otp"
                 inputMode="numeric"
-                maxLength={10}
-                placeholder="Enter 10-digit registered number"
-                value={oldPhone}
+                maxLength={6}
+                placeholder="Enter 6-digit OTP"
+                value={otp}
                 onChange={(e) => {
-                  handleDigitInput(e, 10);
-                  setOldPhone(e.target.value);
+                  handleDigitInput(e, 6);
+                  setOtp(e.target.value);
                   if (error) setError(null);
                 }}
                 disabled={busy}
                 autoFocus
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="recover-pin" className="text-primary font-semibold">
-                6-digit recovery PIN
-              </Label>
-              <Input
-                id="recover-pin"
-                inputMode="numeric"
-                autoComplete="off"
-                maxLength={6}
-                placeholder="Enter 6-digit recovery PIN"
-                value={pin}
-                onChange={(e) => {
-                  handleDigitInput(e, 6);
-                  setPin(e.target.value);
-                  if (error) setError(null);
-                }}
-                disabled={busy}
-              />
-            </div>
-            {error ? <ErrorBanner message={error} /> : null}
-            <div className="flex gap-2">
-              <Link
-                href="/"
-                className={cn(
-                  buttonVariants({ variant: "outline" }),
-                  "inline-flex h-9 items-center px-3"
-                )}
+              <p className="text-xs text-muted-foreground">
+                Enter the 6-digit OTP sent to{" "}
+                {formatPhone(confirmedNewPhone || newPhone)}
+              </p>
+              <Button
+                type="button"
+                variant="link"
+                className="h-auto px-0"
+                disabled={busy || resendIn > 0}
+                onClick={() => void resendOtp()}
               >
-                <ArrowLeft className="mr-2 size-4" />
-                Back to sign in
-              </Link>
+                {resendIn > 0 ? `Resend OTP in ${resendIn}s` : "Resend OTP"}
+              </Button>
+            </div>
+          ) : null}
+
+          {error ? <ErrorBanner message={error} /> : null}
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={goBack}
+              disabled={busy}
+            >
+              Back
+            </Button>
+            {otpSent ? (
               <Button
                 type="submit"
                 className="flex-1"
-                disabled={
-                  busy ||
-                  oldPhone.replace(/\D/g, "").length !== 10 ||
-                  pin.length !== 6
-                }
+                disabled={busy || otp.length !== 6}
               >
                 {busy ? (
                   <>
@@ -413,172 +544,92 @@ export function RecoverAccountFlow() {
                     Verifying…
                   </>
                 ) : (
-                  "Continue"
+                  "Verify OTP"
                 )}
               </Button>
-            </div>
-          </form>
-        )}
-
-        {step === "new-phone" && (
-          <form
-            className="space-y-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (otpSent) void verifyNewOtp(e);
-              else void sendNewPhoneOtp();
-            }}
-          >
-            <div className="space-y-2">
-              <Label htmlFor="recover-new-phone" className="text-primary font-semibold">
-                New mobile number
-              </Label>
-              <Input
-                id="recover-new-phone"
-                inputMode="numeric"
-                maxLength={10}
-                placeholder="Enter new 10-digit mobile number"
-                value={newPhone}
-                onChange={(e) => {
-                  handleDigitInput(e, 10);
-                  setNewPhone(e.target.value);
-                  if (error) setError(null);
-                  if (otpSent) {
-                    setOtpSent(false);
-                    setOtp("");
-                    setOtpSession(null);
-                  }
-                }}
-                disabled={busy}
-                autoFocus={!otpSent}
-              />
-            </div>
-
-            {otpSent ? (
-              <div className="space-y-2">
-                <Label htmlFor="recover-otp" className="text-primary font-semibold">
-                  One-time password
-                </Label>
-                <Input
-                  id="recover-otp"
-                  inputMode="numeric"
-                  maxLength={6}
-                  placeholder="Enter 6-digit OTP"
-                  value={otp}
-                  onChange={(e) => {
-                    handleDigitInput(e, 6);
-                    setOtp(e.target.value);
-                    if (error) setError(null);
-                  }}
-                  disabled={busy}
-                  autoFocus
-                />
-                <p className="text-xs text-muted-foreground">
-                  Enter the 6-digit OTP sent to{" "}
-                  {formatPhone(confirmedNewPhone || newPhone)}
-                </p>
-                <Button
-                  type="button"
-                  variant="link"
-                  className="h-auto px-0"
-                  disabled={busy || resendIn > 0}
-                  onClick={() => void resendOtp()}
-                >
-                  {resendIn > 0 ? `Resend OTP in ${resendIn}s` : "Resend OTP"}
-                </Button>
-              </div>
-            ) : null}
-
-            {error ? <ErrorBanner message={error} /> : null}
-            <div className="flex gap-2">
+            ) : (
               <Button
-                type="button"
-                variant="outline"
-                onClick={goBack}
-                disabled={busy}
-              >
-                Back
-              </Button>
-              {otpSent ? (
-                <Button
-                  type="submit"
-                  className="flex-1"
-                  disabled={busy || otp.length !== 6}
-                >
-                  {busy ? (
-                    <>
-                      <Loader2 className="mr-2 size-4 animate-spin" />
-                      Verifying…
-                    </>
-                  ) : (
-                    "Verify OTP"
-                  )}
-                </Button>
-              ) : (
-                <Button
-                  type="submit"
-                  className="flex-1"
-                  disabled={busy || newPhone.replace(/\D/g, "").length !== 10}
-                >
-                  {busy ? (
-                    <>
-                      <Loader2 className="mr-2 size-4 animate-spin" />
-                      Sending OTP…
-                    </>
-                  ) : (
-                    "Send OTP"
-                  )}
-                </Button>
-              )}
-            </div>
-          </form>
-        )}
-
-        {step === "confirm" && (
-          <div className="space-y-4">
-            <div className="rounded-lg border bg-muted/30 px-4 py-3 text-sm">
-              <dl className="space-y-3">
-                <div className="flex justify-between gap-4">
-                  <dt className="font-medium text-primary">Registered number</dt>
-                  <dd className="font-medium">{formatPhone(oldPhone)}</dd>
-                </div>
-                <div className="flex justify-between gap-4 border-t border-border/60 pt-3">
-                  <dt className="font-medium text-primary">New number</dt>
-                  <dd className="font-medium">
-                    {formatPhone(confirmedNewPhone)}
-                  </dd>
-                </div>
-              </dl>
-            </div>
-            {error ? <ErrorBanner message={error} /> : null}
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={goBack}
-                disabled={busy}
-              >
-                Back
-              </Button>
-              <Button
-                type="button"
+                type="submit"
                 className="flex-1"
-                disabled={busy}
-                onClick={() => void confirmRecovery()}
+                disabled={busy || newPhone.replace(/\D/g, "").length !== 10}
               >
                 {busy ? (
                   <>
                     <Loader2 className="mr-2 size-4 animate-spin" />
-                    Updating…
+                    Sending OTP…
                   </>
                 ) : (
-                  "Confirm change"
+                  "Send OTP"
                 )}
               </Button>
-            </div>
+            )}
           </div>
-        )}
-      </CardContent>
-    </Card>
+        </form>
+      )}
+
+      {step === "confirm" && (
+        <div className="space-y-4">
+          <div className="rounded-lg border bg-muted/30 px-4 py-3 text-sm">
+            <dl className="space-y-3">
+              <div className="flex justify-between gap-4">
+                <dt className="font-medium text-primary">Registered number</dt>
+                <dd className="font-medium">{formatPhone(oldPhone)}</dd>
+              </div>
+              <div className="flex justify-between gap-4 border-t border-border/60 pt-3">
+                <dt className="font-medium text-primary">New number</dt>
+                <dd className="font-medium">
+                  {formatPhone(confirmedNewPhone)}
+                </dd>
+              </div>
+            </dl>
+          </div>
+          {error ? <ErrorBanner message={error} /> : null}
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={goBack}
+              disabled={busy}
+            >
+              Back
+            </Button>
+            <Button
+              type="button"
+              className="flex-1"
+              disabled={busy}
+              onClick={() => void confirmRecovery()}
+            >
+              {busy ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  Updating…
+                </>
+              ) : (
+                "Confirm change"
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  if (embedded) {
+    return body;
+  }
+
+  return (
+    <div className="mx-auto w-full max-w-lg rounded-2xl border border-primary/40 bg-primary/[0.04] p-6 shadow-sm sm:p-7">
+      <div className="mb-5 space-y-1 border-b border-primary/25 pb-4">
+        <h1 className="text-xl font-semibold tracking-tight text-primary">
+          Recover Account
+        </h1>
+        <p className="text-sm text-primary/75">
+          Use your registered mobile number and recovery PIN to regain access
+          when you no longer have your old number.
+        </p>
+      </div>
+      {body}
+    </div>
   );
 }

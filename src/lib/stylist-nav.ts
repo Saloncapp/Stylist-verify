@@ -4,6 +4,7 @@ import {
   ClipboardList,
   History,
   LayoutDashboard,
+  Shield,
   type LucideIcon,
 } from "lucide-react";
 
@@ -48,5 +49,11 @@ export const STYLIST_NAV_ITEMS: StylistNavItem[] = [
     label: "Employment",
     icon: History,
     match: (p) => p.startsWith("/stylist/employment"),
+  },
+  {
+    href: "/stylist/security",
+    label: "Account Security",
+    icon: Shield,
+    match: (p) => p.startsWith("/stylist/security"),
   },
 ];

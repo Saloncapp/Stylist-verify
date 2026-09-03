@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -24,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PhoneOtpAuth } from "@/components/auth/phone-otp-auth";
+import { RecoverAccountFlow } from "@/components/account/recover-account-flow";
 import { SalonAddressFields } from "@/components/landing/salon-address-fields";
 import { useAutofocusById } from "@/hooks/use-autofocus";
 import { handleDigitInput } from "@/lib/digit-input";
@@ -32,7 +32,7 @@ import { formatSalonAddress } from "@/lib/india-locations";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-type Step = "phone" | "role" | "salon" | "stylist";
+type Step = "phone" | "recover" | "role" | "salon" | "stylist";
 type RoleChoice = "salon" | "stylist";
 
 type PendingOtp = { idToken: string; phone: string };
@@ -177,6 +177,26 @@ export function ContinueWithMobileForm() {
     return () => window.removeEventListener("stylist-verify:home-hero", onHomeHero);
   }, [resetToPhoneStep]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const hash = window.location.hash.replace(/^#/, "");
+    if (params.get("recover") === "1" || hash === "recover") {
+      setStep("recover");
+      const card = document.getElementById("continue-with-mobile");
+      card?.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (params.has("recover")) {
+        params.delete("recover");
+        const next = params.toString();
+        window.history.replaceState(
+          null,
+          "",
+          `${window.location.pathname}${next ? `?${next}` : ""}#continue-with-mobile`
+        );
+      }
+    }
+  }, []);
+
   const clearFirebase = useCallback(async () => {
     try {
       await signOut(getFirebaseAuth());
@@ -235,6 +255,10 @@ export function ContinueWithMobileForm() {
   }
 
   function goBack() {
+    if (step === "recover") {
+      setStep("phone");
+      return;
+    }
     if (step === "salon" || step === "stylist") {
       setStep("role");
       return;
@@ -244,6 +268,35 @@ export function ContinueWithMobileForm() {
       setStep("phone");
     }
   }
+
+  const header =
+    step === "phone"
+      ? {
+          title: "Continue with Mobile",
+          subtitle: "Secure phone verification for salons and stylists",
+        }
+      : step === "recover"
+        ? {
+            title: "Recover Account",
+            subtitle:
+              "Use your registered number and recovery PIN when you no longer have your old phone",
+          }
+        : step === "role"
+          ? {
+              title: "Create your account",
+              subtitle: pending
+                ? `Verified +91 ${pending.phone}`
+                : "Choose how you want to continue",
+            }
+          : step === "salon"
+            ? {
+                title: "Salon registration",
+                subtitle: "Tell us about your salon",
+              }
+            : {
+                title: "Stylist registration",
+                subtitle: "Confirm your identity details",
+              };
 
   async function checkAadhaar(aadhaarNumber: string) {
     if (!pending || !/^\d{12}$/.test(aadhaarNumber)) {
@@ -373,42 +426,19 @@ export function ContinueWithMobileForm() {
     }
   }
 
-  const header =
-    step === "phone"
-      ? {
-          title: "Continue with Mobile",
-          subtitle: "Secure phone verification for salons and stylists",
-        }
-      : step === "role"
-        ? {
-            title: "Create your account",
-            subtitle: pending
-              ? `Verified +91 ${pending.phone}`
-              : "Choose how you want to continue",
-          }
-        : step === "salon"
-          ? {
-              title: "Salon registration",
-              subtitle: "Tell us about your salon",
-            }
-          : {
-              title: "Stylist registration",
-              subtitle: "Confirm your identity details",
-            };
-
   return (
     <Card
       id="continue-with-mobile"
       className={cn(
         "flex w-full scroll-mt-24 flex-col gap-0 overflow-hidden rounded-2xl border border-primary/40 bg-primary/[0.04] py-0 shadow-sm",
-        step === "salon" &&
+        (step === "salon" || step === "recover") &&
           "max-h-[min(36rem,calc(100dvh-5.5rem))] sm:max-h-[min(38rem,calc(100dvh-5.5rem))] lg:max-h-[calc(100dvh-5.5rem)]"
       )}
     >
       <CardHeader
         className={cn(
           "shrink-0 space-y-0 border-b border-primary/25 bg-primary/10",
-          step === "salon"
+          step === "salon" || step === "recover"
             ? "px-4 py-3.5 sm:px-5 sm:py-4"
             : "px-6 py-5 sm:px-7 sm:py-6"
         )}
@@ -418,15 +448,19 @@ export function ContinueWithMobileForm() {
             <div
               className={cn(
                 "flex shrink-0 items-center justify-center rounded-xl border border-primary/40 bg-primary/15 text-primary shadow-sm",
-                step === "salon" ? "size-9" : "size-10"
+                step === "salon" || step === "recover" ? "size-9" : "size-10"
               )}
             >
-              <Smartphone className={step === "salon" ? "size-4" : "size-5"} />
+              <Smartphone
+                className={
+                  step === "salon" || step === "recover" ? "size-4" : "size-5"
+                }
+              />
             </div>
             <CardTitle
               className={cn(
                 "min-w-0 font-semibold tracking-tight text-primary",
-                step === "salon" ? "text-lg" : "text-xl"
+                step === "salon" || step === "recover" ? "text-lg" : "text-xl"
               )}
             >
               {header.title}
@@ -441,7 +475,7 @@ export function ContinueWithMobileForm() {
       <CardContent
         className={cn(
           "flex min-h-0 flex-1 flex-col bg-card/80",
-          step === "salon"
+          step === "salon" || step === "recover"
             ? "overflow-y-auto overscroll-contain px-4 py-3.5 sm:px-5 sm:py-4"
             : "px-6 py-6 sm:px-7 sm:py-7"
         )}
@@ -449,7 +483,7 @@ export function ContinueWithMobileForm() {
         <div
           className={cn(
             "flex flex-col",
-            step === "salon" || step === "stylist"
+            step === "salon" || step === "stylist" || step === "recover"
               ? "min-h-0 justify-start"
               : "min-h-[280px] justify-center sm:min-h-[300px]"
           )}
@@ -472,13 +506,24 @@ export function ContinueWithMobileForm() {
                 otpInputId="home-auth-otp"
               />
               <div className="mt-4 text-center">
-                <Link
-                  href="/recover"
+                <button
+                  type="button"
                   className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+                  onClick={() => setStep("recover")}
                 >
                   Recover Account
-                </Link>
+                </button>
               </div>
+            </StepShell>
+          )}
+
+          {step === "recover" && (
+            <StepShell>
+              <RecoverAccountFlow
+                embedded
+                onBackToSignIn={() => setStep("phone")}
+                onCompleteSignIn={() => setStep("phone")}
+              />
             </StepShell>
           )}
 

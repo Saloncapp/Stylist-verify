@@ -175,7 +175,7 @@ export function StylistSelfProfileForm({
                 readOnly
               />
               <p className="text-xs text-muted-foreground">
-                Change your login number from Account Security in profile settings.
+                Change your login number from Account Security in the sidebar.
               </p>
             </div>
 

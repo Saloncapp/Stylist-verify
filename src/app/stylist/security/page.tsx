@@ -13,7 +13,5 @@ export default async function StylistSecurityPage() {
     redirect("/");
   }
 
-  return (
-    <AccountSecurityPanel backHref="/stylist/profile" />
-  );
+  return <AccountSecurityPanel />;
 }

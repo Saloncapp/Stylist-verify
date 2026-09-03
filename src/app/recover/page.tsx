@@ -1,14 +1,6 @@
-import type { Metadata } from "next";
-import { RecoverAccountFlow } from "@/components/account/recover-account-flow";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Recover Account",
-};
-
+/** Legacy /recover URL → home Continue-with-Mobile recover step */
 export default function RecoverAccountPage() {
-  return (
-    <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-3xl flex-col justify-center px-4 py-10">
-      <RecoverAccountFlow />
-    </div>
-  );
+  redirect("/?recover=1#continue-with-mobile");
 }

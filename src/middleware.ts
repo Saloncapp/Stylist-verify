@@ -25,12 +25,14 @@ export async function middleware(request: NextRequest) {
   const isSalonProtected = pathname.startsWith("/dashboard");
   const isStylistProtected = pathname.startsWith("/stylist");
 
-  // Legacy /login and /register → home OTP (or role home if already signed in)
+  // Legacy /login, /register, /recover → home Continue-with-Mobile flow
   if (
     pathname === "/login" ||
     pathname.startsWith("/login/") ||
     pathname === "/register" ||
-    pathname.startsWith("/register/")
+    pathname.startsWith("/register/") ||
+    pathname === "/recover" ||
+    pathname.startsWith("/recover/")
   ) {
     if (token) {
       const session = await verifySession(token);
@@ -43,9 +45,12 @@ export async function middleware(request: NextRequest) {
         NextResponse.redirect(new URL(AUTH_ENTRY_PATH, request.url))
       );
     }
-    return NextResponse.redirect(
-      new URL(`${AUTH_ENTRY_PATH}#continue-with-mobile`, request.url)
-    );
+    const hash = "#continue-with-mobile";
+    const target =
+      pathname === "/recover" || pathname.startsWith("/recover/")
+        ? `${AUTH_ENTRY_PATH}?recover=1${hash}`
+        : `${AUTH_ENTRY_PATH}${hash}`;
+    return NextResponse.redirect(new URL(target, request.url));
   }
 
   const isGuestOnly = guestOnlyExact.has(pathname);
@@ -103,6 +108,8 @@ export const config = {
     "/login/:path*",
     "/register",
     "/register/:path*",
+    "/recover",
+    "/recover/:path*",
     "/dashboard/:path*",
     "/stylist/:path*",
   ],

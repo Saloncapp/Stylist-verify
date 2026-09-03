@@ -18,6 +18,7 @@ import { toast } from "sonner";
 const RESEND_COOLDOWN_SEC = 30;
 
 type Step =
+  | "confirm-send"
   | "current-otp"
   | "new-phone"
   | "new-otp"
@@ -41,13 +42,20 @@ function formatPhone(phone: string) {
   return `+91 ${phone.slice(0, 5)} ${phone.slice(5)}`;
 }
 
+/** Mask all but the last 2 digits of a 10-digit Indian mobile. */
+function maskPhoneLastTwo(phone: string) {
+  const digits = phone.replace(/\D/g, "").slice(-10);
+  if (digits.length !== 10) return phone;
+  return `+91 ********${digits.slice(-2)}`;
+}
+
 export function ChangePhoneNumberDialog({
   open,
   onOpenChange,
   currentPhone,
   onComplete,
 }: Props) {
-  const [step, setStep] = useState<Step>("current-otp");
+  const [step, setStep] = useState<Step>("confirm-send");
   const [currentOtpSession, setCurrentOtpSession] = useState<string | null>(null);
   const [currentVerifiedToken, setCurrentVerifiedToken] = useState<string | null>(
     null
@@ -64,11 +72,11 @@ export function ChangePhoneNumberDialog({
   const [error, setError] = useState<string | null>(null);
 
   const busy = sending || verifying || confirming;
+  const maskedCurrent = maskPhoneLastTwo(currentPhone);
 
   useEffect(() => {
     if (!open) return;
     resetFlow();
-    void sendCurrentOtp();
   }, [open]);
 
   useEffect(() => {
@@ -80,7 +88,7 @@ export function ChangePhoneNumberDialog({
   }, [resendIn]);
 
   function resetFlow() {
-    setStep("current-otp");
+    setStep("confirm-send");
     setCurrentOtpSession(null);
     setCurrentVerifiedToken(null);
     setNewPhone("");
@@ -111,6 +119,7 @@ export function ChangePhoneNumberDialog({
       setCurrentOtpSession(result.data.otpSession as string);
       setOtp("");
       setResendIn(RESEND_COOLDOWN_SEC);
+      setStep("current-otp");
       toast.success("OTP sent to your current number");
     } catch {
       setError("Network error. Check your connection and try again.");
@@ -271,22 +280,26 @@ export function ChangePhoneNumberDialog({
   }
 
   const title =
-    step === "current-otp"
-      ? "Verify current number"
-      : step === "new-phone"
-        ? "Enter new number"
-        : step === "new-otp"
-          ? "Verify new number"
-          : "Confirm change";
+    step === "confirm-send"
+      ? "Change phone number"
+      : step === "current-otp"
+        ? "Verify current number"
+        : step === "new-phone"
+          ? "Enter new number"
+          : step === "new-otp"
+            ? "Verify new number"
+            : "Confirm change";
 
   const description =
-    step === "current-otp"
-      ? `We'll send an OTP to your registered number ${formatPhone(currentPhone)}.`
-      : step === "new-phone"
-        ? "Enter the mobile number you want to use for login."
-        : step === "new-otp"
-          ? `Enter the OTP sent to ${formatPhone(newPhone)}.`
-          : "Review the numbers below, then confirm to update your account.";
+    step === "confirm-send"
+      ? "We'll send a one-time password to your registered mobile number."
+      : step === "current-otp"
+        ? `Enter the OTP sent to ${maskedCurrent}.`
+        : step === "new-phone"
+          ? "Enter the mobile number you want to use for login."
+          : step === "new-otp"
+            ? `Enter the OTP sent to ${formatPhone(newPhone)}.`
+            : "Review the numbers below, then confirm to update your account.";
 
   return (
     <Dialog
@@ -302,6 +315,37 @@ export function ChangePhoneNumberDialog({
         </DialogHeader>
 
         <div className="space-y-4">
+          {step === "confirm-send" ? (
+            <>
+              <div className="space-y-1 text-center text-sm">
+                <p className="text-muted-foreground">Registered number</p>
+                <p className="text-lg font-semibold tracking-wide text-foreground">
+                  {maskedCurrent}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  disabled={busy}
+                  onClick={() => onOpenChange(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  className="flex-1"
+                  disabled={busy}
+                  onClick={() => void sendCurrentOtp()}
+                >
+                  {sending && <Loader2 className="mr-2 size-4 animate-spin" />}
+                  Send OTP
+                </Button>
+              </div>
+            </>
+          ) : null}
+
           {step === "current-otp" || step === "new-otp" ? (
             <>
               <div className="space-y-2">
@@ -336,7 +380,9 @@ export function ChangePhoneNumberDialog({
                 {(verifying || sending) && (
                   <Loader2 className="mr-2 size-4 animate-spin" />
                 )}
-                {step === "current-otp" ? "Verify current number" : "Verify new number"}
+                {step === "current-otp"
+                  ? "Verify current number"
+                  : "Verify new number"}
               </Button>
 
               <div className="flex min-h-5 items-center justify-center text-sm">

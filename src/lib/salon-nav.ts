@@ -2,6 +2,7 @@ import {
   Briefcase,
   LayoutDashboard,
   Search,
+  Shield,
   Users,
   UserRoundSearch,
   type LucideIcon,
@@ -49,5 +50,11 @@ export const SALON_NAV_ITEMS: SalonNavItem[] = [
     icon: UserRoundSearch,
     match: (p) => p.startsWith("/dashboard/applicants"),
     showApplicantBadge: true,
+  },
+  {
+    href: "/dashboard/security",
+    label: "Account Security",
+    icon: Shield,
+    match: (p) => p.startsWith("/dashboard/security"),
   },
 ];

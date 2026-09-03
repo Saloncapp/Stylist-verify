@@ -15,7 +15,8 @@ import { SecurityNotifications } from "@/components/account/security-notificatio
 import { toast } from "sonner";
 
 type Props = {
-  backHref: string;
+  /** Optional fallback link when security settings fail to load */
+  backHref?: string;
 };
 
 type SecurityStatus = {
@@ -66,10 +67,18 @@ export function AccountSecurityPanel({ backHref }: Props) {
   if (!status) {
     return (
       <p className="text-sm text-muted-foreground">
-        Security settings are unavailable right now.{" "}
-        <a href={backHref} className="text-primary underline-offset-4 hover:underline">
-          Back to profile
-        </a>
+        Security settings are unavailable right now.
+        {backHref ? (
+          <>
+            {" "}
+            <a
+              href={backHref}
+              className="text-primary underline-offset-4 hover:underline"
+            >
+              Go back
+            </a>
+          </>
+        ) : null}
       </p>
     );
   }
