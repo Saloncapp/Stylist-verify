@@ -646,7 +646,7 @@ export function AddStylistDialog({
     try {
       await postExistingPayload({
         name: source.name.trim(),
-        mobileNumber: source.mobileNumber.trim(),
+        mobileNumber: existing.mobileNumber.trim(),
         aadhaarNumber: existing.aadhaarNumber,
         address: source.address ?? "",
         photoUrl: source.photoUrl ?? "",
@@ -1075,22 +1075,23 @@ export function AddStylistDialog({
                       onChange={(v) => setExisting({ ...existing, name: v })}
                       onDone={() => setEditField(null)}
                     />
-                    <UnderlineEditable
-                      label="Mobile"
-                      value={existing.mobileNumber}
-                      editing={editField === "mobile"}
-                      disabled={alreadyAtSalon}
-                      inputMode="numeric"
-                      maxLength={10}
-                      onEdit={() => setEditField("mobile")}
-                      onChange={(v) =>
-                        setExisting({
-                          ...existing,
-                          mobileNumber: v.replace(/\D/g, "").slice(0, 10),
-                        })
-                      }
-                      onDone={() => setEditField(null)}
-                    />
+                    <div className="space-y-1">
+                      <UnderlineEditable
+                        label="Mobile"
+                        value={existing.mobileNumber}
+                        editing={false}
+                        disabled
+                        inputMode="numeric"
+                        maxLength={10}
+                        onEdit={() => {}}
+                        onChange={() => {}}
+                        onDone={() => {}}
+                      />
+                      <p className="text-[11px] text-muted-foreground">
+                        Phone number cannot be changed when linking an existing
+                        profile.
+                      </p>
+                    </div>
                     <div className="space-y-1 sm:col-span-2">
                       <p className="text-xs font-medium text-muted-foreground">
                         Aadhaar
@@ -1547,7 +1548,6 @@ export function AddStylistDialog({
                               ? {
                                   ...prev,
                                   name: draft.name,
-                                  mobileNumber: draft.mobileNumber,
                                   address: draft.address,
                                   photoUrl: draft.photoUrl,
                                   level: draft.level,
@@ -1577,7 +1577,11 @@ export function AddStylistDialog({
                     <Button
                       type="button"
                       className="h-10"
-                      disabled={busy || !draftMobileVerified}
+                      disabled={
+                        busy ||
+                        (additionalSource !== "existing" &&
+                          !draftMobileVerified)
+                      }
                       onClick={() => void submitCreate()}
                     >
                       {submitting && (

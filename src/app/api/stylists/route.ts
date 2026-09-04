@@ -130,19 +130,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (existing && existing.mobileNumber !== data.mobileNumber) {
-      const phoneOwner = await Stylist.findOne({
-        mobileNumber: data.mobileNumber,
-        _id: { $ne: existing._id },
-      });
-      if (phoneOwner) {
-        return jsonError(
-          "This phone number is already linked to another stylist profile",
-          409
-        );
-      }
-    }
-
     const now = new Date();
     const joiningDate = workingFromDate(
       data.workingFromMonth,
@@ -158,7 +145,11 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      applyIdentityFields(existing, data);
+      // Keep registered login phone — salons cannot change it when linking.
+      applyIdentityFields(existing, {
+        ...data,
+        mobileNumber: existing.mobileNumber,
+      });
       if (!existing.employeeId) {
         existing.employeeId = await nextEmployeeId();
       }

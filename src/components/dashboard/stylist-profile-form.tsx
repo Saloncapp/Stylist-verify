@@ -557,11 +557,24 @@ export function StylistProfileForm({
           required
           aria-required="true"
           aria-invalid={Boolean(errors.mobileNumber)}
+          aria-readonly={lookup?.found ? "true" : undefined}
           placeholder="10-digit mobile"
+          readOnly={Boolean(lookup?.found)}
+          disabled={alreadyHere}
+          className={
+            lookup?.found || alreadyHere
+              ? "cursor-not-allowed bg-muted"
+              : undefined
+          }
           {...register("mobileNumber", {
             onChange: (e) => handleDigitInput(e, 10),
           })}
         />
+        {lookup?.found && !alreadyHere ? (
+          <p className="text-xs text-muted-foreground">
+            Phone number cannot be changed when linking an existing profile.
+          </p>
+        ) : null}
         {errors.mobileNumber && (
           <p className="text-sm text-danger">{errors.mobileNumber.message}</p>
         )}
