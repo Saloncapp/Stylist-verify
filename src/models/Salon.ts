@@ -12,6 +12,8 @@ export interface ISalon extends Document {
   recoveryPinHash?: string;
   recoveryPinFailedAttempts?: number;
   recoveryPinLockedUntil?: Date;
+  /** Bumped on phone change / recovery so older JWTs are rejected. */
+  authSessionVersion?: number;
   logoUrl?: string;
   salonType: SalonType;
   googleMapsLocation?: string;
@@ -42,6 +44,7 @@ const SalonSchema = new Schema<ISalon>(
     recoveryPinHash: { type: String, select: false },
     recoveryPinFailedAttempts: { type: Number, default: 0 },
     recoveryPinLockedUntil: { type: Date },
+    authSessionVersion: { type: Number, default: 0 },
     logoUrl: { type: String, default: "" },
     salonType: {
       type: String,

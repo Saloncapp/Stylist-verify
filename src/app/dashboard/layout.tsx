@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { connectDB } from "@/lib/db";
 import {
-  clearSessionCookie,
+  CLEAR_SESSION_PATH,
   requireSalonSession,
   toSalonUser,
 } from "@/lib/auth";
@@ -41,13 +41,9 @@ export default async function DashboardLayout({
 }) {
   const result = await getSalonUser();
 
-  if (result === "unauthenticated") {
-    redirect("/");
-  }
-
-  if (result === "invalid") {
-    await clearSessionCookie();
-    redirect("/");
+  if (result === "unauthenticated" || result === "invalid") {
+    // Route Handler clears the cookie (layouts cannot mutate cookies).
+    redirect(CLEAR_SESSION_PATH);
   }
 
   return (

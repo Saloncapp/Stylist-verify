@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { verifySession, homePathForRole } from "@/lib/auth";
+import { verifySession, homePathForRole } from "@/lib/auth-session";
 
 const SESSION_COOKIE = "sv_session";
 /** Unauthenticated users are sent to the home Continue-with-Mobile flow */

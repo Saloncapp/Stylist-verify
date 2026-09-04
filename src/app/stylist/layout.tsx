@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { connectDB } from "@/lib/db";
 import {
-  clearSessionCookie,
+  CLEAR_SESSION_PATH,
   requireStylistSession,
   toStylistAccount,
 } from "@/lib/auth";
@@ -54,13 +54,9 @@ export default async function StylistLayout({
 }) {
   const result = await getStylistUser();
 
-  if (result === "unauthenticated") {
-    redirect("/");
-  }
-
-  if (result === "invalid") {
-    await clearSessionCookie();
-    redirect("/");
+  if (result === "unauthenticated" || result === "invalid") {
+    // Route Handler clears the cookie (layouts cannot mutate cookies).
+    redirect(CLEAR_SESSION_PATH);
   }
 
   return (

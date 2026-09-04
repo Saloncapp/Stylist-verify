@@ -101,7 +101,10 @@ export async function applyPhoneNumberChange(params: {
   accountId: string;
   newPhone: string;
   currentPhone: string;
-}): Promise<{ ok: true } | { ok: false; message: string }> {
+}): Promise<
+  | { ok: true; authSessionVersion: number }
+  | { ok: false; message: string }
+> {
   const newPhone = normalizeIndianMobile(params.newPhone);
   const currentPhone = normalizeIndianMobile(params.currentPhone);
   if (!newPhone || !currentPhone) {
@@ -134,9 +137,11 @@ export async function applyPhoneNumberChange(params: {
         message: "Your registered phone number has changed. Start again.",
       };
     }
+    const nextVersion = (salon.authSessionVersion ?? 0) + 1;
     salon.salonNumber = newPhone;
+    salon.authSessionVersion = nextVersion;
     await salon.save();
-    return { ok: true };
+    return { ok: true, authSessionVersion: nextVersion };
   }
 
   const stylist = await Stylist.findById(params.accountId);
@@ -149,7 +154,9 @@ export async function applyPhoneNumberChange(params: {
       message: "Your registered phone number has changed. Start again.",
     };
   }
+  const nextVersion = (stylist.authSessionVersion ?? 0) + 1;
   stylist.mobileNumber = newPhone;
+  stylist.authSessionVersion = nextVersion;
   await stylist.save();
-  return { ok: true };
+  return { ok: true, authSessionVersion: nextVersion };
 }

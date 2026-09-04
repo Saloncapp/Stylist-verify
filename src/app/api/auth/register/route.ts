@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/db";
 import {
+  accountAuthSessionVersion,
   createSession,
   setSessionCookie,
   toSalonUser,
@@ -122,6 +123,7 @@ export async function POST(request: NextRequest) {
         role: "salon",
         phone,
         salonId: salon._id.toString(),
+        sv: accountAuthSessionVersion(salon.authSessionVersion),
       });
       await setSessionCookie(token);
 
@@ -212,6 +214,7 @@ export async function POST(request: NextRequest) {
       role: "stylist",
       phone,
       stylistId: stylist._id.toString(),
+      sv: accountAuthSessionVersion(stylist.authSessionVersion),
     });
     await setSessionCookie(token);
 

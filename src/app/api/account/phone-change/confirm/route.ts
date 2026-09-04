@@ -88,6 +88,7 @@ export async function POST(request: NextRequest) {
       phone: ready.newPhone,
       salonId: ready.role === "salon" ? ready.accountId : undefined,
       stylistId: ready.role === "stylist" ? ready.accountId : undefined,
+      sv: applied.authSessionVersion,
     });
     await setSessionCookie(token);
 

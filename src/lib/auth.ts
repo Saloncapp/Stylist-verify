@@ -1,114 +1,134 @@
-import { SignJWT, jwtVerify } from "jose";
 import { cookies, headers } from "next/headers";
+import { connectDB } from "@/lib/db";
+import { normalizeIndianMobile } from "@/lib/phone";
 import type { SalonType } from "@/lib/salon-constants";
 import { DEFAULT_SALON_TYPE } from "@/lib/salon-constants";
+import Salon from "@/models/Salon";
+import Stylist from "@/models/Stylist";
 import type { SalonUser, StylistAccount } from "@/types";
+import {
+  SESSION_COOKIE_MAX_AGE,
+  SESSION_COOKIE_NAME,
+  createSession,
+  extractBearerToken,
+  homePathForRole,
+  sessionCookieClearOptions,
+  SETUP_RECOVERY_PIN_PATH,
+  CLEAR_SESSION_PATH,
+  verifySession,
+  type SessionPayload,
+  type UserRole,
+} from "@/lib/auth-session";
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "fallback-dev-secret-change-me"
-);
+export {
+  SESSION_COOKIE_NAME,
+  createSession,
+  extractBearerToken,
+  homePathForRole,
+  sessionCookieClearOptions,
+  SETUP_RECOVERY_PIN_PATH,
+  CLEAR_SESSION_PATH,
+  verifySession,
+  type SessionPayload,
+  type UserRole,
+};
 
-const COOKIE_NAME = "sv_session";
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
-
-export const SESSION_COOKIE_NAME = COOKIE_NAME;
-
-export function sessionCookieClearOptions() {
-  return {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax" as const,
-    maxAge: 0,
-    path: "/",
-  };
+/**
+ * Sessions embed login phone + authSessionVersion.
+ * After recovery / phone change, older JWTs no longer match and are rejected
+ * (website cookie cleared; app Bearer gets 401 → local logout).
+ */
+export function accountAuthSessionVersion(
+  value: number | null | undefined
+): number {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0
+    ? Math.floor(value)
+    : 0;
 }
 
-export type UserRole = "salon" | "stylist";
+export async function sessionMatchesAccount(
+  session: SessionPayload
+): Promise<boolean> {
+  const sessionPhone = normalizeIndianMobile(session.phone);
+  if (!sessionPhone) return false;
+  const sessionVersion = accountAuthSessionVersion(session.sv);
 
-export interface SessionPayload {
-  uid: string;
-  role: UserRole;
-  phone: string;
-  salonId?: string;
-  stylistId?: string;
-}
+  await connectDB();
 
-export async function createSession(payload: SessionPayload): Promise<string> {
-  return new SignJWT({ ...payload })
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime("7d")
-    .sign(JWT_SECRET);
-}
-
-export async function verifySession(
-  token: string
-): Promise<SessionPayload | null> {
-  try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    const uid = typeof payload.uid === "string" ? payload.uid : "";
-    const role = payload.role === "salon" || payload.role === "stylist"
-      ? payload.role
-      : null;
-    const phone = typeof payload.phone === "string" ? payload.phone : "";
-    if (!uid || !role || !phone) return null;
-
-    const salonId =
-      typeof payload.salonId === "string" ? payload.salonId : undefined;
-    const stylistId =
-      typeof payload.stylistId === "string" ? payload.stylistId : undefined;
-
-    if (role === "salon" && !salonId) return null;
-    if (role === "stylist" && !stylistId) return null;
-
-    return { uid, role, phone, salonId, stylistId };
-  } catch {
-    return null;
+  if (session.role === "salon" && session.salonId) {
+    const salon = await Salon.findById(session.salonId).select(
+      "salonNumber authSessionVersion"
+    );
+    if (!salon) return false;
+    if (normalizeIndianMobile(salon.salonNumber) !== sessionPhone) return false;
+    return (
+      accountAuthSessionVersion(salon.authSessionVersion) === sessionVersion
+    );
   }
+
+  if (session.role === "stylist" && session.stylistId) {
+    const stylist = await Stylist.findById(session.stylistId).select(
+      "mobileNumber authSessionVersion"
+    );
+    if (!stylist) return false;
+    if (normalizeIndianMobile(stylist.mobileNumber) !== sessionPhone) {
+      return false;
+    }
+    return (
+      accountAuthSessionVersion(stylist.authSessionVersion) === sessionVersion
+    );
+  }
+
+  return false;
 }
 
 export async function setSessionCookie(token: string): Promise<void> {
   const cookieStore = await cookies();
-  cookieStore.set(COOKIE_NAME, token, {
+  cookieStore.set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    maxAge: COOKIE_MAX_AGE,
+    maxAge: SESSION_COOKIE_MAX_AGE,
     path: "/",
   });
 }
 
 export async function clearSessionCookie(): Promise<void> {
   const cookieStore = await cookies();
-  cookieStore.set(COOKIE_NAME, "", sessionCookieClearOptions());
-}
-
-/** Extract Bearer token from an Authorization header value. */
-export function extractBearerToken(
-  authorizationHeader: string | null | undefined
-): string | null {
-  if (!authorizationHeader) return null;
-  const match = /^Bearer\s+(.+)$/i.exec(authorizationHeader.trim());
-  const token = match?.[1]?.trim();
-  return token || null;
+  cookieStore.set(SESSION_COOKIE_NAME, "", sessionCookieClearOptions());
 }
 
 /**
  * Resolve session from Authorization Bearer (mobile) or sv_session cookie (web).
  * Bearer takes precedence when both are present.
+ * Rejects tokens whose phone no longer matches the account (e.g. after recovery).
  */
 export async function getSession(): Promise<SessionPayload | null> {
   const headerStore = await headers();
   const bearer = extractBearerToken(headerStore.get("authorization"));
   if (bearer) {
     const fromBearer = await verifySession(bearer);
-    if (fromBearer) return fromBearer;
+    if (fromBearer) {
+      if (await sessionMatchesAccount(fromBearer)) return fromBearer;
+      // Stale bearer after phone change/recovery — do not fall back to cookie.
+      return null;
+    }
   }
 
   const cookieStore = await cookies();
-  const cookieToken = cookieStore.get(COOKIE_NAME)?.value;
+  const cookieToken = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   if (!cookieToken) return null;
-  return verifySession(cookieToken);
+
+  const fromCookie = await verifySession(cookieToken);
+  if (!fromCookie) return null;
+
+  if (!(await sessionMatchesAccount(fromCookie))) {
+    // Do not cookies().set here — Server Components cannot mutate cookies.
+    // Callers should redirect to /api/auth/clear-session to clear + sign out.
+    return null;
+  }
+
+  return fromCookie;
 }
 
 export async function requireSalonSession(): Promise<SessionPayload | null> {
@@ -121,12 +141,6 @@ export async function requireStylistSession(): Promise<SessionPayload | null> {
   const session = await getSession();
   if (!session || session.role !== "stylist" || !session.stylistId) return null;
   return session;
-}
-
-export const SETUP_RECOVERY_PIN_PATH = "/setup-recovery-pin";
-
-export function homePathForRole(role: UserRole): string {
-  return role === "salon" ? "/dashboard" : "/stylist";
 }
 
 export function toSalonUser(

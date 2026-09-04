@@ -57,6 +57,8 @@ export interface IStylist extends Document {
   recoveryPinHash?: string;
   recoveryPinFailedAttempts?: number;
   recoveryPinLockedUntil?: Date;
+  /** Bumped on phone change / recovery so older JWTs are rejected. */
+  authSessionVersion?: number;
   address?: string;
   photoUrl?: string;
   openToWork: boolean;
@@ -138,6 +140,7 @@ const StylistSchema = new Schema<IStylist>(
     recoveryPinHash: { type: String, select: false },
     recoveryPinFailedAttempts: { type: Number, default: 0 },
     recoveryPinLockedUntil: { type: Date },
+    authSessionVersion: { type: Number, default: 0 },
     address: { type: String, default: "" },
     photoUrl: { type: String, default: "" },
     openToWork: { type: Boolean, default: false },
