@@ -64,18 +64,28 @@ export async function POST(request: NextRequest) {
       return jsonSuccess({ found: false });
     }
 
-    const mobileMatches = stylist.mobileNumber === phone;
+    const mobileMatches =
+      normalizeIndianMobile(stylist.mobileNumber) === phone;
+
+    // Only reveal profile details when the verified phone owns this Aadhaar.
+    // Otherwise attackers could probe Aadhaars and learn other users' name/mobile.
+    if (!mobileMatches) {
+      return jsonSuccess({
+        found: true,
+        mobileMatches: false,
+        canLink: false,
+        message:
+          "A stylist profile with this Aadhaar already exists with a different phone number.",
+      });
+    }
 
     return jsonSuccess({
       found: true,
-      mobileMatches,
+      mobileMatches: true,
+      canLink: true,
       name: stylist.name,
-      mobileNumber: stylist.mobileNumber,
-      employeeId: stylist.employeeId ?? "",
-      canLink: mobileMatches,
-      message: mobileMatches
-        ? "A stylist profile already exists for this Aadhaar. Continuing will link it to this phone login."
-        : "A stylist profile with this Aadhaar already exists with a different phone number.",
+      message:
+        "A stylist profile already exists for this Aadhaar. Continuing will link it to this phone login.",
     });
   } catch (error) {
     console.error("Stylist aadhaar lookup error:", error);
