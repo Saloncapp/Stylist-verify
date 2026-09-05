@@ -34,8 +34,23 @@ import { toast } from "sonner";
 
 type Step = "phone" | "recover" | "role" | "salon" | "stylist";
 type RoleChoice = "salon" | "stylist";
+type AuthMode = "signin" | "register";
 
-type PendingOtp = { idToken: string; phone: string };
+type PendingAuth = {
+  phone: string;
+  registrationToken?: string;
+  idToken?: string;
+};
+
+function registrationAuthPayload(pending: PendingAuth) {
+  if (pending.registrationToken) {
+    return { registrationToken: pending.registrationToken };
+  }
+  if (pending.idToken) {
+    return { idToken: pending.idToken };
+  }
+  return {};
+}
 
 const salonFormSchema = z.object({
   salonName: z
@@ -119,12 +134,16 @@ function RequiredFieldLabel({
 }
 
 /**
- * Home-page auth card: OTP → inline role choice → salon/stylist registration.
+ * Home-page auth card:
+ * - Sign-in: Continue with Mobile (OTP) → dashboard
+ * - New users: “Don’t have an account?” → Salon/Stylist → OTP → form
  */
 export function ContinueWithMobileForm() {
   const router = useRouter();
   const [step, setStep] = useState<Step>("phone");
-  const [pending, setPending] = useState<PendingOtp | null>(null);
+  const [authMode, setAuthMode] = useState<AuthMode>("signin");
+  const [intendedRole, setIntendedRole] = useState<RoleChoice | null>(null);
+  const [pending, setPending] = useState<PendingAuth | null>(null);
   const [busy, setBusy] = useState(false);
   const [aadhaarLookup, setAadhaarLookup] = useState<AadhaarLookup>({
     status: "idle",
@@ -156,8 +175,10 @@ export function ContinueWithMobileForm() {
 
   useAutofocusById("aadhaarNumber", step === "stylist", [step]);
 
-  const resetToPhoneStep = useCallback(() => {
+  const resetToSignIn = useCallback(() => {
     setStep("phone");
+    setAuthMode("signin");
+    setIntendedRole(null);
     setPending(null);
     setAadhaarLookup({ status: "idle" });
     salonForm.reset({
@@ -172,16 +193,19 @@ export function ContinueWithMobileForm() {
   }, [salonForm, stylistForm]);
 
   useEffect(() => {
-    const onHomeHero = () => resetToPhoneStep();
+    const onHomeHero = () => resetToSignIn();
     window.addEventListener("stylist-verify:home-hero", onHomeHero);
-    return () => window.removeEventListener("stylist-verify:home-hero", onHomeHero);
-  }, [resetToPhoneStep]);
+    return () =>
+      window.removeEventListener("stylist-verify:home-hero", onHomeHero);
+  }, [resetToSignIn]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     const hash = window.location.hash.replace(/^#/, "");
     if (params.get("recover") === "1" || hash === "recover") {
+      setAuthMode("signin");
+      setIntendedRole(null);
       setStep("recover");
       const card = document.getElementById("continue-with-mobile");
       card?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -223,9 +247,31 @@ export function ContinueWithMobileForm() {
       }
 
       if (result.data?.needsRegistration) {
-        setPending({ idToken, phone });
-        setStep("role");
+        const nextPending: PendingAuth = {
+          phone: (result.data.phone as string) || phone,
+          registrationToken: result.data.registrationToken as
+            | string
+            | undefined,
+          idToken,
+        };
+        if (
+          !nextPending.registrationToken &&
+          !nextPending.idToken
+        ) {
+          toast.error("Registration session is invalid. Please try again.");
+          return;
+        }
+        setPending(nextPending);
         toast.success("Phone verified");
+
+        // Register path already chose Salon/Stylist — go straight to that form.
+        if (authMode === "register" && intendedRole) {
+          setStep(intendedRole);
+          return;
+        }
+
+        // Sign-in path found a new phone — ask Salon vs Stylist next.
+        setStep("role");
         return;
       }
 
@@ -240,7 +286,24 @@ export function ContinueWithMobileForm() {
     }
   }
 
-  function selectRole(role: RoleChoice) {
+  function selectRoleForRegister(role: RoleChoice) {
+    setIntendedRole(role);
+    setAadhaarLookup({ status: "idle" });
+    stylistForm.reset({ aadhaarNumber: "", name: "" });
+    salonForm.reset({
+      salonName: "",
+      state: "",
+      district: "",
+      city: "",
+      area: "",
+      pinCode: "",
+    });
+    setAuthMode("register");
+    setStep("phone");
+  }
+
+  function selectRoleAfterOtp(role: RoleChoice) {
+    setIntendedRole(role);
     setAadhaarLookup({ status: "idle" });
     stylistForm.reset({ aadhaarNumber: "", name: "" });
     salonForm.reset({
@@ -256,24 +319,51 @@ export function ContinueWithMobileForm() {
 
   function goBack() {
     if (step === "recover") {
+      setAuthMode("signin");
+      setIntendedRole(null);
       setStep("phone");
       return;
     }
     if (step === "salon" || step === "stylist") {
-      setStep("role");
+      if (pending) {
+        setStep("role");
+        return;
+      }
+      setStep("phone");
       return;
     }
     if (step === "role") {
-      setPending(null);
+      if (pending) {
+        setPending(null);
+        setAuthMode("signin");
+        setIntendedRole(null);
+        setStep("phone");
+        return;
+      }
+      setIntendedRole(null);
+      setAuthMode("signin");
       setStep("phone");
+      return;
+    }
+    if (step === "phone" && authMode === "register") {
+      setPending(null);
+      setStep("role");
     }
   }
 
   const header =
     step === "phone"
       ? {
-          title: "Continue with Mobile",
-          subtitle: "Secure phone verification for salons and stylists",
+          title:
+            authMode === "register"
+              ? intendedRole === "stylist"
+                ? "Register as Stylist"
+                : "Register as Salon"
+              : "Continue with Mobile",
+          subtitle:
+            authMode === "register"
+              ? "Verify your mobile number to continue registration"
+              : "Secure phone verification for salons and stylists",
         }
       : step === "recover"
         ? {
@@ -286,7 +376,7 @@ export function ContinueWithMobileForm() {
               title: "Create your account",
               subtitle: pending
                 ? `Verified +91 ${pending.phone}`
-                : "Choose how you want to continue",
+                : "Choose Salon or Stylist to get started",
             }
           : step === "salon"
             ? {
@@ -303,13 +393,21 @@ export function ContinueWithMobileForm() {
       setAadhaarLookup({ status: "idle" });
       return;
     }
+    const auth = registrationAuthPayload(pending);
+    if (!("registrationToken" in auth) && !("idToken" in auth)) {
+      setAadhaarLookup({
+        status: "error",
+        message: "Registration session expired. Please sign in again.",
+      });
+      return;
+    }
     try {
       setAadhaarLookup({ status: "loading" });
       const res = await fetch("/api/auth/stylist-aadhaar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          idToken: pending.idToken,
+          ...auth,
           aadhaarNumber,
         }),
       });
@@ -328,7 +426,7 @@ export function ContinueWithMobileForm() {
       setAadhaarLookup({
         status: "found",
         canLink: Boolean(result.data.canLink),
-        name: result.data.name as string,
+        name: (result.data.name as string) || "",
         message: result.data.message as string,
       });
       if (result.data.canLink && result.data.name) {
@@ -364,7 +462,7 @@ export function ContinueWithMobileForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          idToken: pending.idToken,
+          ...registrationAuthPayload(pending),
           role: "salon",
           salonName: normalized.salonName,
           salonAddress,
@@ -399,7 +497,7 @@ export function ContinueWithMobileForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          idToken: pending.idToken,
+          ...registrationAuthPayload(pending),
           role: "stylist",
           name: data.name,
           aadhaarNumber: data.aadhaarNumber,
@@ -492,7 +590,11 @@ export function ContinueWithMobileForm() {
             <StepShell>
               <PhoneOtpAuth
                 onVerified={onVerified}
-                introText="Sign in or create your account using your mobile number."
+                introText={
+                  authMode === "register"
+                    ? `Verify your mobile to create a ${intendedRole === "stylist" ? "stylist" : "salon"} account.`
+                    : undefined
+                }
                 helperText="We'll send you a one-time verification code."
                 continueLabel="Continue"
                 submitLabel="Continue"
@@ -505,14 +607,47 @@ export function ContinueWithMobileForm() {
                 phoneInputId="home-auth-phone"
                 otpInputId="home-auth-otp"
               />
-              <div className="mt-4 text-center">
-                <button
-                  type="button"
-                  className="text-sm font-medium text-primary underline-offset-4 hover:underline"
-                  onClick={() => setStep("recover")}
-                >
-                  Recover Account
-                </button>
+              <div className="mt-4 flex flex-col gap-3">
+                {authMode === "signin" ? (
+                  <>
+                    <div className="text-center text-sm text-muted-foreground">
+                      Don&apos;t have an account?{" "}
+                      <button
+                        type="button"
+                        className="font-medium text-primary underline-offset-4 hover:underline"
+                        onClick={() => {
+                          setAuthMode("register");
+                          setPending(null);
+                          setIntendedRole(null);
+                          setStep("role");
+                        }}
+                        disabled={busy}
+                      >
+                        Create account
+                      </button>
+                    </div>
+                    <div className="text-center">
+                      <button
+                        type="button"
+                        className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+                        onClick={() => setStep("recover")}
+                      >
+                        Recover Account
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="w-full"
+                    onClick={goBack}
+                    disabled={busy}
+                  >
+                    <ArrowLeft className="mr-2 size-4" />
+                    Back
+                  </Button>
+                )}
               </div>
             </StepShell>
           )}
@@ -521,8 +656,8 @@ export function ContinueWithMobileForm() {
             <StepShell>
               <RecoverAccountFlow
                 embedded
-                onBackToSignIn={() => setStep("phone")}
-                onCompleteSignIn={() => setStep("phone")}
+                onBackToSignIn={resetToSignIn}
+                onCompleteSignIn={resetToSignIn}
               />
             </StepShell>
           )}
@@ -530,14 +665,20 @@ export function ContinueWithMobileForm() {
           {step === "role" && (
             <StepShell className="space-y-5">
               <p className="text-[0.9375rem] leading-relaxed text-muted-foreground">
-                What would you like to register?
+                {pending
+                  ? "What would you like to register?"
+                  : "Choose the account type you want to create."}
               </p>
               <div className="grid gap-3">
                 <Button
                   type="button"
                   variant="outline"
                   className="h-auto justify-start gap-3 px-4 py-4 text-left"
-                  onClick={() => selectRole("salon")}
+                  onClick={() =>
+                    pending
+                      ? selectRoleAfterOtp("salon")
+                      : selectRoleForRegister("salon")
+                  }
                   disabled={busy}
                 >
                   <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border bg-muted/40">
@@ -556,7 +697,11 @@ export function ContinueWithMobileForm() {
                   type="button"
                   variant="outline"
                   className="h-auto justify-start gap-3 px-4 py-4 text-left"
-                  onClick={() => selectRole("stylist")}
+                  onClick={() =>
+                    pending
+                      ? selectRoleAfterOtp("stylist")
+                      : selectRoleForRegister("stylist")
+                  }
                   disabled={busy}
                 >
                   <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border bg-muted/40">
