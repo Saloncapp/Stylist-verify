@@ -1,6 +1,9 @@
-import { ShieldCheck } from "lucide-react";
+"use client";
+
+import { motion, useReducedMotion } from "framer-motion";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LinkButton } from "@/components/link-button";
+import { BrandMark } from "@/components/brand-mark";
 import { HomeBrandLink, HOME_HERO_HREF } from "@/components/layout/home-brand-link";
 
 interface NavbarProps {
@@ -8,44 +11,48 @@ interface NavbarProps {
 }
 
 export function Navbar({ variant = "landing" }: NavbarProps) {
+  const reduceMotion = useReducedMotion();
+  const playIntro = variant === "landing" && !reduceMotion;
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/80 backdrop-blur-lg">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <HomeBrandLink className="group flex shrink-0 items-center gap-2.5">
-          <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-            <ShieldCheck className="size-5" />
-          </div>
-          <span className="text-lg font-semibold tracking-tight text-foreground transition-colors group-hover:text-primary">
-            Stylist Verify
-          </span>
+          <motion.span
+            className="inline-flex items-center gap-2.5"
+            initial={playIntro ? { opacity: 0 } : false}
+            animate={{ opacity: 1 }}
+            transition={
+              playIntro
+                ? { duration: 0.45, ease: [0.22, 1, 0.36, 1] }
+                : { duration: 0 }
+            }
+          >
+            <BrandMark size={60} className="size-16" priority />
+            <span className="text-xl font-bold tracking-tight text-foreground transition-colors group-hover:text-primary sm:text-2xl">
+              Stylist Verify
+            </span>
+          </motion.span>
         </HomeBrandLink>
 
         {variant === "landing" && (
           <nav className="hidden flex-1 items-center justify-center gap-8 md:flex">
-            <a
-              href="#why"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-            >
-              Why Stylist Verify
-            </a>
-            <a
-              href="#how-it-works"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-            >
-              How It Works
-            </a>
-            <a
-              href="#benefits"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-            >
-              Benefits
-            </a>
-            <a
-              href="#faq"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-            >
-              FAQ
-            </a>
+            {(
+              [
+                { href: "#why", label: "Why Stylist Verify" },
+                { href: "#how-it-works", label: "How It Works" },
+                { href: "#benefits", label: "Benefits" },
+                { href: "#faq", label: "FAQ" },
+              ] as const
+            ).map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                className="text-sm font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-primary hover:underline focus-visible:text-primary focus-visible:underline focus-visible:outline-none"
+              >
+                {item.label}
+              </a>
+            ))}
           </nav>
         )}
 

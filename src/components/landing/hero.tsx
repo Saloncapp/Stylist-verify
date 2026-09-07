@@ -1,12 +1,14 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { Search, Shield, Users } from "lucide-react";
 import { LinkButton } from "@/components/link-button";
 import { ContinueWithMobileForm } from "@/components/landing/continue-with-mobile";
 import { HOME_HERO_ID } from "@/components/layout/home-brand-link";
 
 export function HeroSection() {
+  const reduceMotion = useReducedMotion();
+
   return (
     <section
       id={HOME_HERO_ID}
@@ -21,9 +23,13 @@ export function HeroSection() {
         <div className="min-w-0">
           <div className="mx-auto flex w-full max-w-2xl flex-col items-center text-center lg:mx-0 lg:max-w-3xl">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={reduceMotion ? false : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
+              transition={
+                reduceMotion
+                  ? { duration: 0 }
+                  : { duration: 0.4, delay: 0.08, ease: [0.22, 1, 0.36, 1] }
+              }
             >
               <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm font-medium text-primary">
                 <Shield className="size-4" />
@@ -33,9 +39,13 @@ export function HeroSection() {
 
             <motion.h1
               className="mt-6 text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-[3.25rem] lg:leading-[1.1]"
-              initial={{ opacity: 0, y: 20 }}
+              initial={reduceMotion ? false : { opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
+              transition={
+                reduceMotion
+                  ? { duration: 0 }
+                  : { duration: 0.5, delay: 0.12, ease: [0.22, 1, 0.36, 1] }
+              }
             >
               Verify Stylist Employment{" "}
               <span className="text-primary">Before You Hire</span>
@@ -43,9 +53,13 @@ export function HeroSection() {
 
             <motion.p
               className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground"
-              initial={{ opacity: 0, y: 20 }}
+              initial={reduceMotion ? false : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
+              transition={
+                reduceMotion
+                  ? { duration: 0 }
+                  : { duration: 0.4, delay: 0.28, ease: [0.22, 1, 0.36, 1] }
+              }
             >
               Stylist Verify helps salon owners make informed hiring decisions with
               verified employment records — not blacklists, just transparent history.
@@ -53,26 +67,72 @@ export function HeroSection() {
 
             <motion.div
               className="mt-8 flex w-full justify-center"
-              initial={{ opacity: 0, y: 20 }}
+              initial={reduceMotion ? false : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
+              transition={
+                reduceMotion
+                  ? { duration: 0 }
+                  : { duration: 0.4, delay: 0.42, ease: [0.22, 1, 0.36, 1] }
+              }
             >
               <LinkButton
                 href="/verify"
                 size="lg"
-                className="h-12 w-full max-w-xs px-8 text-base sm:w-auto"
+                className="relative h-12 w-full max-w-xs overflow-hidden px-8 text-base sm:w-auto"
               >
-                <Search className="mr-2 size-5 shrink-0" />
-                Verify Stylist
+                {!reduceMotion ? (
+                  <motion.span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 -skew-x-12 bg-gradient-to-r from-transparent via-sky-200/70 to-transparent"
+                    initial={{ x: "-120%", opacity: 0 }}
+                    animate={{ x: "280%", opacity: [0, 1, 1, 0] }}
+                    transition={{
+                      duration: 0.55,
+                      delay: 0.72,
+                      ease: "easeInOut",
+                      times: [0, 0.15, 0.85, 1],
+                    }}
+                  />
+                ) : null}
+                <motion.span
+                  className="relative z-20 mr-2 inline-flex shrink-0"
+                  initial={reduceMotion ? false : { scale: 0.85, opacity: 0.6 }}
+                  animate={
+                    reduceMotion
+                      ? { scale: 1, opacity: 1, rotate: 0 }
+                      : {
+                          scale: [0.85, 1.12, 1],
+                          opacity: [0.6, 1, 1],
+                          rotate: [0, -12, 0],
+                        }
+                  }
+                  transition={
+                    reduceMotion
+                      ? { duration: 0 }
+                      : {
+                          duration: 0.5,
+                          delay: 0.55,
+                          ease: [0.22, 1, 0.36, 1],
+                          times: [0, 0.45, 1],
+                        }
+                  }
+                >
+                  <Search className="size-5" />
+                </motion.span>
+                <span className="relative z-20">Verify Stylist</span>
               </LinkButton>
             </motion.div>
           </div>
 
           <motion.div
             className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-3"
-            initial={{ opacity: 0, y: 20 }}
+            initial={reduceMotion ? false : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
+            transition={
+              reduceMotion
+                ? { duration: 0 }
+                : { duration: 0.4, delay: 0.7, ease: [0.22, 1, 0.36, 1] }
+            }
           >
             {[
               { icon: Shield, label: "Verified Records", value: "100%" },
@@ -93,9 +153,13 @@ export function HeroSection() {
 
         <motion.div
           className="mx-auto w-full max-w-[26rem] shrink-0 self-start lg:sticky lg:top-20 lg:mx-0 lg:w-[26rem] lg:max-w-none lg:self-start"
-          initial={{ opacity: 0, y: 24 }}
+          initial={reduceMotion ? false : { opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.25 }}
+          transition={
+            reduceMotion
+              ? { duration: 0 }
+              : { duration: 0.45, delay: 0.35, ease: [0.22, 1, 0.36, 1] }
+          }
         >
           <ContinueWithMobileForm />
         </motion.div>

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
-import { ShieldCheck } from "lucide-react";
+import { BrandMark } from "@/components/brand-mark";
 import { HomeBrandLink } from "@/components/layout/home-brand-link";
 import { STYLIST_NAV_ITEMS } from "@/lib/stylist-nav";
 import { cn } from "@/lib/utils";
@@ -96,9 +96,7 @@ export function StylistSidebarBrand({
       onClick={onNavigate}
       className="flex min-w-0 items-center gap-2.5 px-1"
     >
-      <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-        <ShieldCheck className="size-4" />
-      </div>
+      <BrandMark size={40} className="size-10 shrink-0" />
       <span className="truncate font-semibold tracking-tight">
         Stylist Verify
       </span>
