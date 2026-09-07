@@ -51,7 +51,7 @@ export function hasActiveEmploymentAtSalon(
   salonId: string
 ): boolean {
   return getSalonEmploymentEntries(stylist, salonId).some(
-    (entry) => entry.status === "Active" || entry.status == null
+    (entry) => entry.status === "Active"
   );
 }
 

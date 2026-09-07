@@ -42,7 +42,8 @@ export function buildEmploymentEntry(input: {
   if (input.employeeId) entry.employeeId = input.employeeId;
   if (input.jobId) entry.jobId = input.jobId;
   if (input.applicationId) entry.applicationId = input.applicationId;
-  if (input.data.status) entry.status = input.data.status;
+  // Always persist an explicit status — omit/undefined must not become "null ≈ Active".
+  entry.status = input.data.status ?? "Active";
   if (input.data.remark) entry.remark = input.data.remark;
   if (input.data.level) entry.level = input.data.level;
   if (input.data.role) entry.role = input.data.role;

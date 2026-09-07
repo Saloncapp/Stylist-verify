@@ -294,11 +294,7 @@ export function buildOpenToWorkTalentFilter(
         employmentHistory: {
           $elemMatch: {
             salonId: salonObjectId,
-            $or: [
-              { status: "Active" },
-              { status: null },
-              { status: { $exists: false } },
-            ],
+            status: "Active",
           },
         },
       },
@@ -371,7 +367,7 @@ export function activeSalonIdsForStylist(
 ): string[] {
   const ids = new Set<string>();
   for (const entry of stylist.employmentHistory ?? []) {
-    if (entry.status === "Active" || entry.status == null) {
+    if (entry.status === "Active") {
       ids.add(entry.salonId.toString());
     }
   }

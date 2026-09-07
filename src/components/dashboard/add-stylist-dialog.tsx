@@ -723,7 +723,7 @@ export function AddStylistDialog({
         level: payloadDraft.level || undefined,
         role: payloadDraft.role || undefined,
         employmentType: payloadDraft.employmentType || undefined,
-        status: payloadDraft.status || undefined,
+        status: payloadDraft.status || "Active",
         phoneVerificationToken: phoneVerification.phoneVerificationToken!,
       };
       const parsed = stylistCreateSchema.safeParse(payload);
