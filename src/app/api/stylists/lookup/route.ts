@@ -2,7 +2,11 @@ import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/db";
 import { requireSalonSession } from "@/lib/auth";
 import { jsonError, jsonSuccess } from "@/lib/api";
-import { getAadhaarFromRecord, hashAadhaar, maskAadhaar } from "@/lib/aadhaar-crypto";
+import {
+  aadhaarLookupFilter,
+  getAadhaarFromRecord,
+  maskAadhaar,
+} from "@/lib/aadhaar-crypto";
 import { normalizeIndianMobile } from "@/lib/phone";
 import {
   getCurrentSalonEmployment,
@@ -38,12 +42,7 @@ export async function GET(request: NextRequest) {
     await connectDB();
 
     const stylist = aadhaarNumber
-      ? await Stylist.findOne({
-          $or: [
-            { aadhaarHash: hashAadhaar(aadhaarNumber) },
-            { aadhaarNumber },
-          ],
-        })
+      ? await Stylist.findOne(aadhaarLookupFilter(aadhaarNumber))
       : await Stylist.findOne({ mobileNumber: mobileNumber! });
 
     if (!stylist) {

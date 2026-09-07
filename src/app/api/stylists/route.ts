@@ -3,7 +3,11 @@ import { connectDB } from "@/lib/db";
 import { requireSalonSession } from "@/lib/auth";
 import { stylistCreateSchema } from "@/lib/validations";
 import { jsonError, jsonSuccess, zodErrorResponse } from "@/lib/api";
-import { hashAadhaar, prepareAadhaarStorage } from "@/lib/aadhaar-crypto";
+import {
+  aadhaarLookupFilter,
+  hashAadhaar,
+  prepareAadhaarStorage,
+} from "@/lib/aadhaar-crypto";
 import { formatStylist } from "@/lib/formatters";
 import { nextEmployeeId } from "@/lib/employee-id";
 import {
@@ -99,9 +103,9 @@ export async function POST(request: NextRequest) {
     }
 
     const aadhaarHash = hashAadhaar(data.aadhaarNumber);
-    const existingByAadhaar = await Stylist.findOne({
-      $or: [{ aadhaarHash }, { aadhaarNumber: data.aadhaarNumber }],
-    });
+    const existingByAadhaar = await Stylist.findOne(
+      aadhaarLookupFilter(data.aadhaarNumber)
+    );
     const existingByMobile = await Stylist.findOne({
       mobileNumber: data.mobileNumber,
     });

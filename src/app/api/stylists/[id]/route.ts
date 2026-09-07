@@ -9,6 +9,7 @@ import { jsonError, jsonSuccess, zodErrorResponse } from "@/lib/api";
 import { formatStylist } from "@/lib/formatters";
 import { salonSnapshotFromSalon } from "@/lib/salon-sync";
 import {
+  aadhaarLookupFilter,
   getAadhaarFromRecord,
   hashAadhaar,
   prepareAadhaarStorage,
@@ -174,7 +175,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       const aadhaarHash = hashAadhaar(data.aadhaarNumber);
       const existing = await Stylist.findOne({
         _id: { $ne: stylist._id },
-        $or: [{ aadhaarHash }, { aadhaarNumber: data.aadhaarNumber }],
+        ...aadhaarLookupFilter(data.aadhaarNumber),
       });
       if (existing) {
         return jsonError(

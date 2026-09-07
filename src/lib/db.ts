@@ -18,9 +18,9 @@ const cached: MongooseCache = global.mongooseCache ?? {
 global.mongooseCache = cached;
 
 /**
- * Open a cached MongoDB connection for request handlers.
- * Heavy one-off migrations (unifyStylistProfiles / hiring indexes) are NOT run here —
- * use `runDatabaseMigrations()` or `npm run db:migrate` when needed.
+ * Cached Mongo connection for request handlers (including /api/verify).
+ * Never runs unify / index migrations — those live in db-migrations.ts
+ * and are invoked only via `npm run db:migrate`.
  */
 export async function connectDB(): Promise<typeof mongoose> {
   const uri = process.env.MONGODB_URI;
@@ -41,13 +41,4 @@ export async function connectDB(): Promise<typeof mongoose> {
 
   cached.conn = await cached.promise;
   return cached.conn;
-}
-
-/** One-off / deploy-time data + index migrations (not on the request path). */
-export async function runDatabaseMigrations(): Promise<void> {
-  const { unifyStylistProfiles } = await import("@/lib/stylist-merge");
-  const { ensureHiringIndexes } = await import("@/lib/hiring");
-  await connectDB();
-  await unifyStylistProfiles();
-  await ensureHiringIndexes();
 }

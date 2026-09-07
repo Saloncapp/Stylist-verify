@@ -106,11 +106,7 @@ export async function hireApplicantFromApplication(input: {
   }
 
   const aadhaarHash = hashAadhaar(data.aadhaarNumber);
-  const stylistAadhaarMatches =
-    stylist.aadhaarHash === aadhaarHash ||
-    stylist.aadhaarNumber === data.aadhaarNumber;
-
-  if (!stylistAadhaarMatches) {
+  if (stylist.aadhaarHash !== aadhaarHash) {
     throw new HireApplicantError(
       "Aadhaar does not match the applicant's profile",
       400

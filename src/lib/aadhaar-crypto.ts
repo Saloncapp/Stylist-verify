@@ -28,6 +28,14 @@ export function hashAadhaar(aadhaar: string): string {
   return createHmac("sha256", getHashKey()).update(aadhaar).digest("hex");
 }
 
+/**
+ * Mongo filter for Aadhaar identity lookups.
+ * Hash-only (indexed) — legacy plaintext `aadhaarNumber` is no longer queried.
+ */
+export function aadhaarLookupFilter(aadhaar: string): { aadhaarHash: string } {
+  return { aadhaarHash: hashAadhaar(aadhaar) };
+}
+
 /** AES-256-GCM encrypt for secure storage */
 export function encryptAadhaar(aadhaar: string): string {
   const iv = randomBytes(IV_LENGTH);

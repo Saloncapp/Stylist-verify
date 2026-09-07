@@ -4,7 +4,7 @@ import { verifyFirebaseIdToken } from "@/lib/firebase-admin";
 import { verifyRegistrationToken } from "@/lib/registration-token";
 import { jsonError, jsonSuccess, zodErrorResponse } from "@/lib/api";
 import { normalizeIndianMobile } from "@/lib/phone";
-import { hashAadhaar } from "@/lib/aadhaar-crypto";
+import { aadhaarLookupFilter } from "@/lib/aadhaar-crypto";
 import { z } from "zod";
 import Stylist from "@/models/Stylist";
 
@@ -52,13 +52,9 @@ export async function POST(request: NextRequest) {
 
     await connectDB();
 
-    const aadhaarHash = hashAadhaar(parsed.data.aadhaarNumber);
-    const stylist = await Stylist.findOne({
-      $or: [
-        { aadhaarHash },
-        { aadhaarNumber: parsed.data.aadhaarNumber },
-      ],
-    });
+    const stylist = await Stylist.findOne(
+      aadhaarLookupFilter(parsed.data.aadhaarNumber)
+    );
 
     if (!stylist) {
       return jsonSuccess({ found: false });

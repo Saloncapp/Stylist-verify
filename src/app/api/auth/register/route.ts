@@ -14,6 +14,7 @@ import { otpRegisterSchema } from "@/lib/validations";
 import { jsonError, jsonSuccess, zodErrorResponse } from "@/lib/api";
 import { normalizeIndianMobile } from "@/lib/phone";
 import {
+  aadhaarLookupFilter,
   hashAadhaar,
   prepareAadhaarStorage,
   maskAadhaar,
@@ -147,9 +148,7 @@ export async function POST(request: NextRequest) {
     }
 
     const aadhaarHash = hashAadhaar(data.aadhaarNumber);
-    let stylist = await Stylist.findOne({
-      $or: [{ aadhaarHash }, { aadhaarNumber: data.aadhaarNumber }],
-    });
+    let stylist = await Stylist.findOne(aadhaarLookupFilter(data.aadhaarNumber));
 
     if (stylist) {
       if (stylist.mobileNumber !== phone) {

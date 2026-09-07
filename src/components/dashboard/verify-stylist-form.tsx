@@ -4,9 +4,10 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
-import { Loader2, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { VerifiedStylistView } from "@/components/verify/verified-stylist-view";
+import { VerifiedStylistViewSkeleton } from "@/components/verify/verified-stylist-view-skeleton";
 import {
   StylistSearchCard,
   type StylistSearchType,
@@ -141,17 +142,13 @@ export function VerifyStylistForm({ embedded = false }: { embedded?: boolean }) 
       />
 
       {isSubmitting ? (
-        <div
-          className="flex items-center justify-center gap-2 py-2"
-          role="status"
-          aria-live="polite"
-        >
-          <Loader2 className="size-5 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Verifying…</p>
+        <div className="space-y-8" role="status" aria-live="polite">
+          <span className="sr-only">Verifying stylist record</span>
+          <VerifiedStylistViewSkeleton />
         </div>
       ) : null}
 
-      {searched && result && !result.found && (
+      {!isSubmitting && searched && result && !result.found && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -164,7 +161,7 @@ export function VerifyStylistForm({ embedded = false }: { embedded?: boolean }) 
         </motion.div>
       )}
 
-      {searched && result?.found && result.stylists.length > 0 && (
+      {!isSubmitting && searched && result?.found && result.stylists.length > 0 && (
         <motion.div
           className="space-y-8"
           initial={{ opacity: 0, y: 10 }}

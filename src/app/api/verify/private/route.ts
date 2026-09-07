@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       return jsonError("Enter a valid Aadhaar number or mobile number", 400);
     }
 
-    const records = await Stylist.find(query).sort({ joiningDate: 1 });
+    const records = await Stylist.find(query);
 
     if (records.length === 0) {
       return jsonSuccess({ found: false, stylists: [] });

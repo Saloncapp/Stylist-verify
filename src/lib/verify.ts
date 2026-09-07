@@ -1,6 +1,6 @@
 import {
+  aadhaarLookupFilter,
   getAadhaarFromRecord,
-  hashAadhaar,
   maskAadhaar,
 } from "@/lib/aadhaar-crypto";
 import { DEFAULT_SALON_TYPE } from "@/lib/salon-constants";
@@ -200,8 +200,7 @@ export function buildVerifyQuery(input: {
   const { aadhaarNumber, mobileNumber } = input;
 
   if (aadhaarNumber && /^\d{12}$/.test(aadhaarNumber)) {
-    const aadhaarHash = hashAadhaar(aadhaarNumber);
-    return { $or: [{ aadhaarHash }, { aadhaarNumber }] };
+    return aadhaarLookupFilter(aadhaarNumber);
   }
 
   if (mobileNumber && /^[6-9]\d{9}$/.test(mobileNumber)) {

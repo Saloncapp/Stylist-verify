@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { Users } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { StylistPreviewCard } from "@/components/verify/stylist-preview-card";
+import { StylistPreviewCardSkeleton } from "@/components/verify/stylist-preview-card-skeleton";
 import { StylistUnavailableDialog } from "@/components/verify/stylist-unavailable-dialog";
 import {
   StylistSearchCard,
@@ -49,6 +50,10 @@ export function VerifyForm() {
   const searchType = watch("searchType");
 
   async function onSubmit(data: VerifyFormInput) {
+    setSearched(false);
+    setResult(null);
+    setUnavailableOpen(false);
+
     try {
       const payload =
         data.searchType === "aadhaar"
@@ -109,7 +114,14 @@ export function VerifyForm() {
         onOpenChange={setUnavailableOpen}
       />
 
-      {searched && result?.found && (
+      {isSubmitting ? (
+        <div className="space-y-6" role="status" aria-live="polite">
+          <span className="sr-only">Verifying stylist record</span>
+          <StylistPreviewCardSkeleton />
+        </div>
+      ) : null}
+
+      {!isSubmitting && searched && result?.found && (
         <motion.div
           className="space-y-6"
           initial={{ opacity: 0, y: 10 }}
