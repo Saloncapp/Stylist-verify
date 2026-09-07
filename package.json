@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "build:lgd-locations": "node scripts/build-lgd-locations.mjs",
-    "db:migrate": "npx tsx --env-file=.env.local scripts/run-db-migrations.ts"
+    "db:migrate": "npx tsx --env-file=.env scripts/run-db-migrations.ts",
+    "db:migrate:verify-indexes": "npx tsx --env-file=.env scripts/ensure-verify-indexes.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

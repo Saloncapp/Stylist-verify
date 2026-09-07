@@ -5,9 +5,9 @@ import { jsonError, jsonSuccess, zodErrorResponse } from "@/lib/api";
 import {
   buildPublicStylistPreview,
   buildVerifyQuery,
+  findStylistsForVerify,
   groupRecordsByAadhaar,
 } from "@/lib/verify";
-import Stylist from "@/models/Stylist";
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       return jsonError("Enter a valid Aadhaar number or mobile number", 400);
     }
 
-    const records = await Stylist.find(query);
+    const records = await findStylistsForVerify(query, "public");
 
     if (records.length === 0) {
       return jsonSuccess({ found: false, stylists: [] });
