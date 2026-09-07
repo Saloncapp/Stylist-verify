@@ -46,13 +46,20 @@ export function getCurrentSalonEmployment(
   );
 }
 
+/** Active employment at this salon only — no fallback to Relieved/Abscond/legacy. */
+export function getActiveSalonEmployment(
+  stylist: IStylist,
+  salonId: string
+): IEmploymentHistoryEntry | undefined {
+  const entries = getSalonEmploymentEntries(stylist, salonId);
+  return [...entries].reverse().find((entry) => entry.status === "Active");
+}
+
 export function hasActiveEmploymentAtSalon(
   stylist: IStylist,
   salonId: string
 ): boolean {
-  return getSalonEmploymentEntries(stylist, salonId).some(
-    (entry) => entry.status === "Active"
-  );
+  return Boolean(getActiveSalonEmployment(stylist, salonId));
 }
 
 export function applyIdentityFields(
