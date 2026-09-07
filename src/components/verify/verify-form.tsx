@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
@@ -14,7 +14,7 @@ import {
   type StylistSearchType,
 } from "@/components/verify/stylist-search-card";
 import { verifyFormSchema, type VerifyFormInput } from "@/lib/validations";
-import { handleDigitInput } from "@/lib/digit-input";
+import { handleDigitInput, sanitizeDigits } from "@/lib/digit-input";
 import type { PublicStylistPreview } from "@/types";
 import { toast } from "sonner";
 
@@ -26,10 +26,67 @@ interface VerifyResult {
   multiple?: boolean;
 }
 
+type VerifyApiResponse = {
+  success: boolean;
+  message?: string;
+  data?: VerifyResult;
+};
+
+type PrefetchEntry = {
+  key: string;
+  promise: Promise<VerifyApiResponse | null>;
+};
+
+function verifyPrefetchKey(
+  searchType: StylistSearchType,
+  value: string
+): string {
+  return `${searchType}:${value}`;
+}
+
+function buildVerifyPayload(
+  searchType: StylistSearchType,
+  value: string
+): { aadhaarNumber: string } | { mobileNumber: string } {
+  return searchType === "aadhaar"
+    ? { aadhaarNumber: value }
+    : { mobileNumber: value };
+}
+
+function isCompleteVerifyValue(
+  searchType: StylistSearchType,
+  value: string
+): boolean {
+  if (searchType === "aadhaar") return /^\d{12}$/.test(value);
+  return /^[6-9]\d{9}$/.test(value);
+}
+
+async function fetchVerify(
+  payload: { aadhaarNumber: string } | { mobileNumber: string },
+  signal?: AbortSignal
+): Promise<VerifyApiResponse | null> {
+  try {
+    const res = await fetch("/api/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal,
+    });
+    return (await res.json()) as VerifyApiResponse;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      return null;
+    }
+    return null;
+  }
+}
+
 export function VerifyForm() {
   const [result, setResult] = useState<VerifyResult | null>(null);
   const [searched, setSearched] = useState(false);
   const [unavailableOpen, setUnavailableOpen] = useState(false);
+  const prefetchRef = useRef<PrefetchEntry | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const {
     register,
@@ -49,31 +106,73 @@ export function VerifyForm() {
 
   const searchType = watch("searchType");
 
+  // Warm serverless + Mongo as soon as the verify page mounts.
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetch("/api/health", {
+      method: "GET",
+      signal: controller.signal,
+      keepalive: true,
+    }).catch(() => {
+      // Ignore — warm-up only.
+    });
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
+
+  function startVerifyPrefetch(type: StylistSearchType, value: string) {
+    if (!isCompleteVerifyValue(type, value)) return;
+
+    const key = verifyPrefetchKey(type, value);
+    if (prefetchRef.current?.key === key) return;
+
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    const promise = fetchVerify(buildVerifyPayload(type, value), controller.signal);
+    prefetchRef.current = { key, promise };
+  }
+
   async function onSubmit(data: VerifyFormInput) {
     setSearched(false);
     setResult(null);
     setUnavailableOpen(false);
 
+    const value =
+      data.searchType === "aadhaar"
+        ? (data.aadhaarNumber ?? "").trim()
+        : (data.mobileNumber ?? "").trim();
+    const key = verifyPrefetchKey(data.searchType, value);
+    const payload = buildVerifyPayload(data.searchType, value);
+
     try {
-      const payload =
-        data.searchType === "aadhaar"
-          ? { aadhaarNumber: data.aadhaarNumber }
-          : { mobileNumber: data.mobileNumber };
+      let response: VerifyApiResponse | null = null;
 
-      const res = await fetch("/api/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      if (prefetchRef.current?.key === key) {
+        response = await prefetchRef.current.promise;
+      }
 
-      const response = await res.json();
+      if (!response) {
+        response = await fetchVerify(payload);
+      }
+
+      if (!response) {
+        toast.error("Something went wrong");
+        return;
+      }
 
       if (!response.success) {
         toast.error(response.message || "Verification failed");
         return;
       }
 
-      setResult(response.data);
+      setResult(response.data ?? null);
       setSearched(true);
       setUnavailableOpen(!response.data?.found);
     } catch {
@@ -87,7 +186,12 @@ export function VerifyForm() {
     setResult(null);
     setSearched(false);
     setUnavailableOpen(false);
+    abortRef.current?.abort();
+    prefetchRef.current = null;
   }
+
+  const aadhaarRegister = register("aadhaarNumber");
+  const mobileRegister = register("mobileNumber");
 
   const previews = result?.previews ?? [];
 
@@ -101,12 +205,28 @@ export function VerifyForm() {
         autoFocus
         aadhaarError={errors.aadhaarNumber?.message}
         mobileError={errors.mobileNumber?.message}
-        aadhaarInputProps={register("aadhaarNumber", {
-          onChange: (e) => handleDigitInput(e, 12),
-        })}
-        mobileInputProps={register("mobileNumber", {
-          onChange: (e) => handleDigitInput(e, 10),
-        })}
+        aadhaarInputProps={{
+          ...aadhaarRegister,
+          onChange: (e) => {
+            handleDigitInput(e, 12);
+            void aadhaarRegister.onChange(e);
+            const digits = sanitizeDigits(e.target.value, 12);
+            if (searchType === "aadhaar") {
+              startVerifyPrefetch("aadhaar", digits);
+            }
+          },
+        }}
+        mobileInputProps={{
+          ...mobileRegister,
+          onChange: (e) => {
+            handleDigitInput(e, 10);
+            void mobileRegister.onChange(e);
+            const digits = sanitizeDigits(e.target.value, 10);
+            if (searchType === "mobile") {
+              startVerifyPrefetch("mobile", digits);
+            }
+          },
+        }}
       />
 
       <StylistUnavailableDialog
