@@ -68,6 +68,109 @@ function ErrorBanner({ message }: { message: string }) {
   );
 }
 
+/** Matches landing Continue-with-Mobile / PhoneOtpAuth field chrome. */
+const fieldLabelClass = "text-sm font-medium text-primary";
+const phoneGroupClass =
+  "flex h-11 min-w-0 items-stretch overflow-hidden rounded-lg border border-primary/40 bg-transparent transition-colors focus-within:border-primary focus-within:ring-3 focus-within:ring-primary/25";
+const phonePrefixClass =
+  "inline-flex shrink-0 items-center border-r border-primary/30 bg-primary/5 px-3 text-sm font-medium text-primary";
+const phoneInnerInputClass =
+  "h-full min-w-0 flex-1 rounded-none border-0 bg-transparent px-3 text-base shadow-none focus-visible:border-0 focus-visible:ring-0 md:text-sm";
+const digitInputClass =
+  "h-11 border-primary/40 px-3 text-center text-base tracking-[0.2em] focus-visible:border-primary focus-visible:ring-primary/25 md:text-sm";
+const actionButtonClass = "h-11 text-sm font-medium";
+
+function RecoverPhoneField({
+  id,
+  label,
+  value,
+  onChange,
+  disabled,
+  autoFocus,
+  placeholder,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  autoFocus?: boolean;
+  placeholder?: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id} className={fieldLabelClass}>
+        {label}
+      </Label>
+      <div className={cn(phoneGroupClass, disabled && "opacity-50")}>
+        <span className={phonePrefixClass}>+91</span>
+        <Input
+          id={id}
+          type="text"
+          inputMode="numeric"
+          autoComplete="tel"
+          maxLength={10}
+          placeholder={placeholder ?? "10-digit mobile"}
+          value={value}
+          disabled={disabled}
+          autoFocus={autoFocus}
+          onChange={(e) => {
+            handleDigitInput(e, 10);
+            onChange(e.target.value);
+          }}
+          className={phoneInnerInputClass}
+        />
+      </div>
+    </div>
+  );
+}
+
+function RecoverDigitField({
+  id,
+  label,
+  value,
+  onChange,
+  maxLength,
+  disabled,
+  autoFocus,
+  placeholder,
+  autoComplete,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  maxLength: number;
+  disabled?: boolean;
+  autoFocus?: boolean;
+  placeholder?: string;
+  autoComplete?: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id} className={fieldLabelClass}>
+        {label}
+      </Label>
+      <Input
+        id={id}
+        type="text"
+        inputMode="numeric"
+        autoComplete={autoComplete}
+        maxLength={maxLength}
+        placeholder={placeholder}
+        value={value}
+        disabled={disabled}
+        autoFocus={autoFocus}
+        onChange={(e) => {
+          handleDigitInput(e, maxLength);
+          onChange(e.target.value);
+        }}
+        className={digitInputClass}
+      />
+    </div>
+  );
+}
+
 export type RecoverAccountFlowProps = {
   /** When true, renders inside the home Continue-with-Mobile card (no outer page Card). */
   embedded?: boolean;
@@ -366,7 +469,7 @@ export function RecoverAccountFlow({
           </div>
           <Button
             type="button"
-            className="w-full"
+            className={cn("w-full", actionButtonClass)}
             onClick={handleCompleteSignIn}
           >
             Sign in with your new number
@@ -376,52 +479,37 @@ export function RecoverAccountFlow({
 
       {step === "verify-identity" && (
         <form className="space-y-4" onSubmit={verifyIdentity}>
-          <div className="space-y-2">
-            <Label
-              htmlFor="recover-old-phone"
-              className="font-semibold text-primary"
-            >
-              Registered mobile number
-            </Label>
-            <Input
-              id="recover-old-phone"
-              inputMode="numeric"
-              maxLength={10}
-              placeholder="Enter 10-digit registered number"
-              value={oldPhone}
-              onChange={(e) => {
-                handleDigitInput(e, 10);
-                setOldPhone(e.target.value);
-                if (error) setError(null);
-              }}
-              disabled={busy}
-              autoFocus
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="recover-pin" className="font-semibold text-primary">
-              6-digit recovery PIN
-            </Label>
-            <Input
-              id="recover-pin"
-              inputMode="numeric"
-              autoComplete="off"
-              maxLength={6}
-              placeholder="Enter 6-digit recovery PIN"
-              value={pin}
-              onChange={(e) => {
-                handleDigitInput(e, 6);
-                setPin(e.target.value);
-                if (error) setError(null);
-              }}
-              disabled={busy}
-            />
-          </div>
+          <RecoverPhoneField
+            id="recover-old-phone"
+            label="Registered mobile number"
+            value={oldPhone}
+            placeholder="10-digit registered number"
+            disabled={busy}
+            autoFocus
+            onChange={(value) => {
+              setOldPhone(value);
+              if (error) setError(null);
+            }}
+          />
+          <RecoverDigitField
+            id="recover-pin"
+            label="6-digit recovery PIN"
+            value={pin}
+            maxLength={6}
+            placeholder="Enter 6-digit recovery PIN"
+            autoComplete="off"
+            disabled={busy}
+            onChange={(value) => {
+              setPin(value);
+              if (error) setError(null);
+            }}
+          />
           {error ? <ErrorBanner message={error} /> : null}
           <div className="flex gap-2">
             <Button
               type="button"
               variant="outline"
+              className={actionButtonClass}
               onClick={goBack}
               disabled={busy}
             >
@@ -430,7 +518,7 @@ export function RecoverAccountFlow({
             </Button>
             <Button
               type="submit"
-              className="flex-1"
+              className={cn("flex-1", actionButtonClass)}
               disabled={
                 busy ||
                 oldPhone.replace(/\D/g, "").length !== 10 ||
@@ -459,66 +547,52 @@ export function RecoverAccountFlow({
             else void sendNewPhoneOtp();
           }}
         >
-          <div className="space-y-2">
-            <Label
-              htmlFor="recover-new-phone"
-              className="font-semibold text-primary"
-            >
-              New mobile number
-            </Label>
-            <Input
-              id="recover-new-phone"
-              inputMode="numeric"
-              maxLength={10}
-              placeholder="Enter new 10-digit mobile number"
-              value={newPhone}
-              onChange={(e) => {
-                handleDigitInput(e, 10);
-                setNewPhone(e.target.value);
-                if (error) setError(null);
-                if (otpSent) {
-                  setOtpSent(false);
-                  setOtp("");
-                  setOtpSession(null);
-                }
-              }}
-              disabled={busy}
-              autoFocus={!otpSent}
-            />
-          </div>
+          <RecoverPhoneField
+            id="recover-new-phone"
+            label="New mobile number"
+            value={newPhone}
+            placeholder="10-digit mobile"
+            disabled={busy}
+            autoFocus={!otpSent}
+            onChange={(value) => {
+              setNewPhone(value);
+              if (error) setError(null);
+              if (otpSent) {
+                setOtpSent(false);
+                setOtp("");
+                setOtpSession(null);
+              }
+            }}
+          />
 
           {otpSent ? (
             <div className="space-y-2">
-              <Label htmlFor="recover-otp" className="font-semibold text-primary">
-                One-time password
-              </Label>
-              <Input
+              <RecoverDigitField
                 id="recover-otp"
-                inputMode="numeric"
-                maxLength={6}
-                placeholder="Enter 6-digit OTP"
+                label="OTP"
                 value={otp}
-                onChange={(e) => {
-                  handleDigitInput(e, 6);
-                  setOtp(e.target.value);
-                  if (error) setError(null);
-                }}
+                maxLength={6}
+                placeholder="6-digit OTP"
+                autoComplete="one-time-code"
                 disabled={busy}
                 autoFocus
+                onChange={(value) => {
+                  setOtp(value);
+                  if (error) setError(null);
+                }}
               />
               <p className="text-xs text-muted-foreground">
                 Enter the 6-digit OTP sent to{" "}
                 {formatPhone(confirmedNewPhone || newPhone)}
               </p>
-              <Button
+              <button
                 type="button"
-                variant="link"
-                className="h-auto px-0"
+                className="text-sm font-medium text-primary underline-offset-4 hover:underline disabled:pointer-events-none disabled:opacity-50"
                 disabled={busy || resendIn > 0}
                 onClick={() => void resendOtp()}
               >
                 {resendIn > 0 ? `Resend OTP in ${resendIn}s` : "Resend OTP"}
-              </Button>
+              </button>
             </div>
           ) : null}
 
@@ -527,6 +601,7 @@ export function RecoverAccountFlow({
             <Button
               type="button"
               variant="outline"
+              className={actionButtonClass}
               onClick={goBack}
               disabled={busy}
             >
@@ -535,7 +610,7 @@ export function RecoverAccountFlow({
             {otpSent ? (
               <Button
                 type="submit"
-                className="flex-1"
+                className={cn("flex-1", actionButtonClass)}
                 disabled={busy || otp.length !== 6}
               >
                 {busy ? (
@@ -550,7 +625,7 @@ export function RecoverAccountFlow({
             ) : (
               <Button
                 type="submit"
-                className="flex-1"
+                className={cn("flex-1", actionButtonClass)}
                 disabled={busy || newPhone.replace(/\D/g, "").length !== 10}
               >
                 {busy ? (
@@ -569,7 +644,7 @@ export function RecoverAccountFlow({
 
       {step === "confirm" && (
         <div className="space-y-4">
-          <div className="rounded-lg border bg-muted/30 px-4 py-3 text-sm">
+          <div className="rounded-lg border border-primary/25 bg-primary/[0.04] px-4 py-3 text-sm">
             <dl className="space-y-3">
               <div className="flex justify-between gap-4">
                 <dt className="font-medium text-primary">Registered number</dt>
@@ -588,6 +663,7 @@ export function RecoverAccountFlow({
             <Button
               type="button"
               variant="outline"
+              className={actionButtonClass}
               onClick={goBack}
               disabled={busy}
             >
@@ -595,7 +671,7 @@ export function RecoverAccountFlow({
             </Button>
             <Button
               type="button"
-              className="flex-1"
+              className={cn("flex-1", actionButtonClass)}
               disabled={busy}
               onClick={() => void confirmRecovery()}
             >
