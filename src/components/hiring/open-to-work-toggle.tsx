@@ -83,7 +83,7 @@ export function OpenToWorkToggle({
           disabled={pending}
           onCheckedChange={handleChange}
           aria-label="Open to Work"
-          className="scale-90 data-[checked]:bg-[#16A34A]"
+          className="scale-90 data-[checked]:bg-success"
         />
       </div>
     );
@@ -124,7 +124,7 @@ export function OpenToWorkToggle({
           disabled={pending}
           onCheckedChange={handleChange}
           aria-label="Open to Work"
-          className="data-[checked]:bg-[#16A34A]"
+          className="data-[checked]:bg-success"
         />
       </CardContent>
     </Card>

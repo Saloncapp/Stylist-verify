@@ -31,7 +31,7 @@ export function ApplicantPreviewCard({ application }: ApplicantPreviewCardProps)
       </div>
 
       <p className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground sm:text-sm">
-        <Phone className="size-3 shrink-0 text-[#2563EB]" />
+        <Phone className="size-3 shrink-0 text-primary" />
         <span className="whitespace-nowrap">{application.stylistMobile}</span>
       </p>
     </div>

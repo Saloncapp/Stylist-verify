@@ -51,13 +51,13 @@ export function DashboardSidebar({
   return (
     <aside
       className={cn(
-        "flex h-full flex-col border-border bg-card",
+        "flex h-full flex-col border-sidebar-border bg-sidebar text-sidebar-foreground",
         className
       )}
     >
       <div
         className={cn(
-          "flex shrink-0 items-center border-b border-border px-4",
+          "flex shrink-0 items-center border-b border-sidebar-border px-4",
           DASHBOARD_TOP_BAR_CLASS
         )}
       >

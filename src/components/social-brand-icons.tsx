@@ -82,7 +82,7 @@ export const SOCIAL_LINK_BRAND_STYLES = {
   Website: {
     iconClassName: "text-primary",
     buttonClassName:
-      "bg-primary/10 hover:bg-primary/15 hover:shadow-[0_2px_8px_rgba(59,130,246,0.2)]",
+      "bg-primary/10 hover:bg-primary/15 hover:shadow-[0_2px_8px_rgba(15,107,95,0.2)]",
   },
   Instagram: {
     iconClassName: "text-white",

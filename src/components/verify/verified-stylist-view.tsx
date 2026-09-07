@@ -137,7 +137,7 @@ export function VerifiedStylistView({
               <div className="flex flex-col items-center gap-2 sm:items-start">
                 <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
                   <h2 className="text-2xl font-bold tracking-tight">{name}</h2>
-                  <BadgeCheck className="size-5 text-success" />
+                  <BadgeCheck className="size-5 text-brand-accent" />
                   <StatusBadge
                     status={status}
                     className="uppercase tracking-wide"

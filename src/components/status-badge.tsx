@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 const statusStyles: Record<StylistStatus, string> = {
   Active: "bg-success/10 text-success border-success/20",
-  Relieved: "bg-warning/10 text-warning border-warning/20",
+  Relieved: "bg-brand-accent-soft text-brand-accent border-brand-accent/25",
   Abscond: "bg-danger/10 text-danger border-danger/20",
 };
 

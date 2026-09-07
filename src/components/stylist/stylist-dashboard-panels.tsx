@@ -148,7 +148,7 @@ export function StylistDashboardPanels({
         description="Open positions you can apply to."
         count={jobs.count}
         countLabel={jobs.count === 1 ? "open job" : "open jobs"}
-        countColor="#2563EB"
+        countColor="#0F6B5F"
         icon={Briefcase}
         emptyMessage="No open positions right now. Check back soon."
         viewMoreHref="/stylist/jobs"
@@ -167,7 +167,7 @@ export function StylistDashboardPanels({
         countLabel={
           applications.count === 1 ? "application" : "applications"
         }
-        countColor="#16A34A"
+        countColor="#0D9B82"
         icon={ClipboardList}
         emptyMessage="You haven't applied to any jobs yet."
         viewMoreHref="/stylist/applications"

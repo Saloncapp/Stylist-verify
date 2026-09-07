@@ -11,11 +11,8 @@ export function StylistTeamEmptyState() {
           0 Stylists Registered
         </p>
 
-        <div
-          className="mt-4 flex size-14 items-center justify-center rounded-full sm:size-16"
-          style={{ backgroundColor: "#2563EB1A" }}
-        >
-          <Users className="size-7 text-[#2563EB] sm:size-8" aria-hidden="true" />
+        <div className="mt-4 flex size-14 items-center justify-center rounded-full bg-primary/10 sm:size-16">
+          <Users className="size-7 text-primary sm:size-8" aria-hidden="true" />
         </div>
 
         <h2 className="mt-4 text-xl font-bold tracking-tight sm:text-2xl">
@@ -31,7 +28,7 @@ export function StylistTeamEmptyState() {
           <LinkButton
             href="/dashboard/stylists?add=1"
             variant="link"
-            className="h-auto p-0 text-[#2563EB] underline-offset-4 hover:underline"
+            className="h-auto p-0 text-primary underline-offset-4 hover:underline"
           >
             Add Stylist
           </LinkButton>
@@ -41,7 +38,7 @@ export function StylistTeamEmptyState() {
           <LinkButton
             href="/dashboard/verify"
             variant="link"
-            className="h-auto p-0 text-[#2563EB] underline-offset-4 hover:underline"
+            className="h-auto p-0 text-primary underline-offset-4 hover:underline"
           >
             Find Stylists
           </LinkButton>

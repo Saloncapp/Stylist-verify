@@ -16,7 +16,7 @@ export function StylistApplicationPreviewCard({
         <Briefcase className="size-4 text-muted-foreground" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate font-semibold text-[#2563EB]">
+        <p className="truncate font-semibold text-primary">
           {application.jobRole}
         </p>
         <p className="truncate text-sm text-muted-foreground">

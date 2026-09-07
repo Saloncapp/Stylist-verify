@@ -32,10 +32,7 @@ export function FindStylistPageContent() {
       <div className="space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-lg font-semibold">Open to Work</h2>
-          <span
-            className="rounded-full px-2.5 py-0.5 text-xs font-medium"
-            style={{ color: "#16A34A", backgroundColor: "#16A34A1A" }}
-          >
+          <span className="rounded-full bg-success/10 px-2.5 py-0.5 text-xs font-medium text-success">
             Available
           </span>
         </div>

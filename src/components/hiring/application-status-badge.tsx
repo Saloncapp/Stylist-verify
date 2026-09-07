@@ -6,15 +6,15 @@ const STATUS_STYLES: Record<
   { badge: string; color: string }
 > = {
   Interested: {
-    color: "#2563EB",
-    badge: "bg-[#2563EB]/15 text-[#2563EB]",
+    color: "#0F6B5F",
+    badge: "bg-primary/15 text-primary",
   },
   Hired: {
-    color: "#16A34A",
-    badge: "bg-success/15 text-success",
+    color: "#B5945F",
+    badge: "bg-brand-accent-soft text-brand-accent",
   },
   Rejected: {
-    color: "#DC2626",
+    color: "#C44B4B",
     badge: "bg-destructive/10 text-destructive",
   },
 };

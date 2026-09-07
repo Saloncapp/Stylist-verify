@@ -14,7 +14,7 @@ import {
   type StylistSearchType,
 } from "@/components/verify/stylist-search-card";
 import { verifyFormSchema, type VerifyFormInput } from "@/lib/validations";
-import { handleDigitInput, sanitizeDigits } from "@/lib/digit-input";
+import { handleDigitInput } from "@/lib/digit-input";
 import type { PublicStylistPreview } from "@/types";
 import { toast } from "sonner";
 
@@ -26,58 +26,34 @@ interface VerifyResult {
   multiple?: boolean;
 }
 
-type VerifyApiResponse = {
-  success: boolean;
-  message?: string;
-  data?: VerifyResult;
-};
+type VerifyPayload = { aadhaarNumber: string } | { mobileNumber: string };
 
-type PrefetchEntry = {
-  key: string;
-  promise: Promise<VerifyApiResponse | null>;
-};
+type VerifyApiOutcome =
+  | { status: "success"; data: VerifyResult }
+  | { status: "error"; message: string }
+  | { status: "network" };
 
-function verifyPrefetchKey(
-  searchType: StylistSearchType,
-  value: string
-): string {
-  return `${searchType}:${value}`;
+function payloadKey(payload: VerifyPayload): string {
+  return JSON.stringify(payload);
 }
 
-function buildVerifyPayload(
-  searchType: StylistSearchType,
-  value: string
-): { aadhaarNumber: string } | { mobileNumber: string } {
-  return searchType === "aadhaar"
-    ? { aadhaarNumber: value }
-    : { mobileNumber: value };
-}
-
-function isCompleteVerifyValue(
-  searchType: StylistSearchType,
-  value: string
-): boolean {
-  if (searchType === "aadhaar") return /^\d{12}$/.test(value);
-  return /^[6-9]\d{9}$/.test(value);
-}
-
-async function fetchVerify(
-  payload: { aadhaarNumber: string } | { mobileNumber: string },
-  signal?: AbortSignal
-): Promise<VerifyApiResponse | null> {
+async function requestVerify(payload: VerifyPayload): Promise<VerifyApiOutcome> {
   try {
     const res = await fetch("/api/verify", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
-      signal,
     });
-    return (await res.json()) as VerifyApiResponse;
-  } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") {
-      return null;
+    const response = await res.json();
+    if (!response.success) {
+      return {
+        status: "error",
+        message: response.message || "Verification failed",
+      };
     }
-    return null;
+    return { status: "success", data: response.data as VerifyResult };
+  } catch {
+    return { status: "network" };
   }
 }
 
@@ -85,8 +61,10 @@ export function VerifyForm() {
   const [result, setResult] = useState<VerifyResult | null>(null);
   const [searched, setSearched] = useState(false);
   const [unavailableOpen, setUnavailableOpen] = useState(false);
-  const prefetchRef = useRef<PrefetchEntry | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
+  const prefetchRef = useRef<{
+    key: string;
+    promise: Promise<VerifyApiOutcome>;
+  } | null>(null);
 
   const {
     register,
@@ -106,37 +84,20 @@ export function VerifyForm() {
 
   const searchType = watch("searchType");
 
-  // Warm serverless + Mongo as soon as the verify page mounts.
+  // Warm serverless instance + Mongo while the user reads / types.
   useEffect(() => {
-    const controller = new AbortController();
-    void fetch("/api/health", {
-      method: "GET",
-      signal: controller.signal,
-      keepalive: true,
-    }).catch(() => {
-      // Ignore — warm-up only.
-    });
-    return () => controller.abort();
+    void fetch("/api/health", { method: "GET", cache: "no-store" }).catch(
+      () => undefined
+    );
   }, []);
 
-  useEffect(() => {
-    return () => {
-      abortRef.current?.abort();
-    };
-  }, []);
-
-  function startVerifyPrefetch(type: StylistSearchType, value: string) {
-    if (!isCompleteVerifyValue(type, value)) return;
-
-    const key = verifyPrefetchKey(type, value);
+  function startPrefetch(payload: VerifyPayload) {
+    const key = payloadKey(payload);
     if (prefetchRef.current?.key === key) return;
-
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    const promise = fetchVerify(buildVerifyPayload(type, value), controller.signal);
-    prefetchRef.current = { key, promise };
+    prefetchRef.current = {
+      key,
+      promise: requestVerify(payload),
+    };
   }
 
   async function onSubmit(data: VerifyFormInput) {
@@ -144,40 +105,29 @@ export function VerifyForm() {
     setResult(null);
     setUnavailableOpen(false);
 
-    const value =
+    const payload: VerifyPayload =
       data.searchType === "aadhaar"
-        ? (data.aadhaarNumber ?? "").trim()
-        : (data.mobileNumber ?? "").trim();
-    const key = verifyPrefetchKey(data.searchType, value);
-    const payload = buildVerifyPayload(data.searchType, value);
+        ? { aadhaarNumber: data.aadhaarNumber!.trim() }
+        : { mobileNumber: data.mobileNumber!.trim() };
 
-    try {
-      let response: VerifyApiResponse | null = null;
+    const key = payloadKey(payload);
+    const outcome =
+      prefetchRef.current?.key === key
+        ? await prefetchRef.current.promise
+        : await requestVerify(payload);
 
-      if (prefetchRef.current?.key === key) {
-        response = await prefetchRef.current.promise;
-      }
-
-      if (!response) {
-        response = await fetchVerify(payload);
-      }
-
-      if (!response) {
-        toast.error("Something went wrong");
-        return;
-      }
-
-      if (!response.success) {
-        toast.error(response.message || "Verification failed");
-        return;
-      }
-
-      setResult(response.data ?? null);
-      setSearched(true);
-      setUnavailableOpen(!response.data?.found);
-    } catch {
-      toast.error("Something went wrong");
+    if (outcome.status === "error") {
+      toast.error(outcome.message);
+      return;
     }
+    if (outcome.status === "network") {
+      toast.error("Something went wrong");
+      return;
+    }
+
+    setResult(outcome.data);
+    setSearched(true);
+    setUnavailableOpen(!outcome.data?.found);
   }
 
   function handleSearchTypeChange(value: StylistSearchType) {
@@ -186,12 +136,8 @@ export function VerifyForm() {
     setResult(null);
     setSearched(false);
     setUnavailableOpen(false);
-    abortRef.current?.abort();
     prefetchRef.current = null;
   }
-
-  const aadhaarRegister = register("aadhaarNumber");
-  const mobileRegister = register("mobileNumber");
 
   const previews = result?.previews ?? [];
 
@@ -205,28 +151,24 @@ export function VerifyForm() {
         autoFocus
         aadhaarError={errors.aadhaarNumber?.message}
         mobileError={errors.mobileNumber?.message}
-        aadhaarInputProps={{
-          ...aadhaarRegister,
+        aadhaarInputProps={register("aadhaarNumber", {
           onChange: (e) => {
             handleDigitInput(e, 12);
-            void aadhaarRegister.onChange(e);
-            const digits = sanitizeDigits(e.target.value, 12);
-            if (searchType === "aadhaar") {
-              startVerifyPrefetch("aadhaar", digits);
+            const value = e.target.value;
+            if (/^\d{12}$/.test(value)) {
+              startPrefetch({ aadhaarNumber: value });
             }
           },
-        }}
-        mobileInputProps={{
-          ...mobileRegister,
+        })}
+        mobileInputProps={register("mobileNumber", {
           onChange: (e) => {
             handleDigitInput(e, 10);
-            void mobileRegister.onChange(e);
-            const digits = sanitizeDigits(e.target.value, 10);
-            if (searchType === "mobile") {
-              startVerifyPrefetch("mobile", digits);
+            const value = e.target.value;
+            if (/^[6-9]\d{9}$/.test(value)) {
+              startPrefetch({ mobileNumber: value });
             }
           },
-        }}
+        })}
       />
 
       <StylistUnavailableDialog

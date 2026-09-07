@@ -39,7 +39,7 @@ function PhoneRow({
         className
       )}
     >
-      <Phone className="size-3 shrink-0 text-[#2563EB]" aria-hidden="true" />
+      <Phone className="size-3 shrink-0 text-primary" aria-hidden="true" />
       <span
         className={cn(
           "text-muted-foreground",
@@ -122,7 +122,7 @@ export function TalentCard({
         transition={{ duration: 0.2 }}
         className="h-full"
       >
-        <Card className="h-full border-l-4 border-l-[#2563EB] shadow-sm">
+        <Card className="h-full border-l-4 border-l-primary shadow-sm">
           <CardContent className="p-4 sm:p-5">
             <div className="flex gap-3">
               <StylistAvatar

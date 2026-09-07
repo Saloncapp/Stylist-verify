@@ -152,7 +152,7 @@ export function DashboardHiringPanels({
             ? "interested applicant"
             : "interested applicants"
         }
-        countColor="#2563EB"
+        countColor="#0F6B5F"
         icon={UserRoundSearch}
         emptyMessage="No interested applicants yet. Post a job to start receiving applications."
         viewMoreHref="/dashboard/applicants"
@@ -176,7 +176,7 @@ export function DashboardHiringPanels({
             ? "stylist available"
             : "stylists available"
         }
-        countColor="#16A34A"
+        countColor="#0D9B82"
         icon={Users}
         emptyMessage="No stylists are Open to Work right now. Check back soon."
         viewMoreHref="/dashboard/verify"

@@ -14,9 +14,10 @@ export function HeroSection() {
       id={HOME_HERO_ID}
       className="relative scroll-mt-20 overflow-hidden px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24"
     >
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute left-1/4 top-0 h-[500px] w-[700px] -translate-x-1/2 rounded-full bg-primary/5 blur-3xl" />
-        <div className="absolute right-0 top-24 h-[400px] w-[500px] rounded-full bg-primary/[0.03] blur-3xl" />
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute inset-0 bg-primary/[0.04]" />
+        <div className="absolute -right-24 -top-32 size-[28rem] rounded-full bg-primary/[0.07]" />
+        <div className="absolute -bottom-40 -left-20 size-[22rem] rounded-full bg-brand-highlight/20" />
       </div>
 
       <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[minmax(0,1fr)_26rem] lg:gap-8 xl:gap-10">
@@ -83,7 +84,7 @@ export function HeroSection() {
                 {!reduceMotion ? (
                   <motion.span
                     aria-hidden
-                    className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 -skew-x-12 bg-gradient-to-r from-transparent via-sky-200/70 to-transparent"
+                    className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 -skew-x-12 bg-gradient-to-r from-transparent via-brand-highlight/50 to-transparent"
                     initial={{ x: "-120%", opacity: 0 }}
                     animate={{ x: "280%", opacity: [0, 1, 1, 0] }}
                     transition={{

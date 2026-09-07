@@ -82,7 +82,7 @@ export function ApplicationCard({
           </div>
 
           <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Phone className="size-3 shrink-0 text-[#2563EB]" />
+            <Phone className="size-3 shrink-0 text-primary" />
             <span className="whitespace-nowrap">{application.stylistMobile}</span>
           </p>
           {application.stylistAddress ? (

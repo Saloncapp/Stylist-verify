@@ -102,7 +102,7 @@ export function DashboardHeader({
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetContent
           side="left"
-          className="w-[min(18rem,85vw)] p-0 sm:max-w-xs"
+          className="w-[min(18rem,85vw)] border-0 bg-sidebar p-0 text-sidebar-foreground sm:max-w-xs [&_[data-slot=sheet-close]]:text-sidebar-foreground [&_[data-slot=sheet-close]]:hover:bg-sidebar-accent [&_[data-slot=sheet-close]]:hover:text-sidebar-accent-foreground"
           showCloseButton
         >
           <SheetTitle className="sr-only">Salon navigation</SheetTitle>

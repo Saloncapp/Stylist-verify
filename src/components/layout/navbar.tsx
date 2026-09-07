@@ -15,7 +15,7 @@ export function Navbar({ variant = "landing" }: NavbarProps) {
   const playIntro = variant === "landing" && !reduceMotion;
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/80 backdrop-blur-lg">
+    <header className="sticky top-0 z-50 w-full border-b border-border/80 bg-background/95 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <HomeBrandLink className="group flex shrink-0 items-center gap-2.5">
           <motion.span

@@ -7,9 +7,9 @@ const statConfig = [
     key: "openJobs" as const,
     label: "Open Jobs",
     icon: Briefcase,
-    color: "text-[#2563EB]",
-    bg: "bg-[#2563EB]/15",
-    card: "border-l-4 border-l-[#2563EB] bg-[#2563EB]/5",
+    color: "text-primary",
+    bg: "bg-primary/15",
+    card: "border-l-4 border-l-primary bg-primary/5",
   },
   {
     key: "applications" as const,
@@ -31,9 +31,9 @@ const statConfig = [
     key: "employment" as const,
     label: "Employment Records",
     icon: History,
-    color: "text-[#8B5CF6]",
-    bg: "bg-[#8B5CF6]/15",
-    card: "border-l-4 border-l-[#8B5CF6] bg-[#8B5CF6]/5",
+    color: "text-brand-accent",
+    bg: "bg-brand-accent-soft",
+    card: "border-l-4 border-l-brand-accent bg-brand-accent-soft/60",
   },
 ];
 

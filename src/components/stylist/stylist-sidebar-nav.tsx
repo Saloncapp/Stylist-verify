@@ -51,16 +51,16 @@ export function StylistSidebarNav({
               className={cn(
                 "relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium",
                 "transition-colors duration-200 ease-in-out",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
                 active
-                  ? "text-primary"
-                  : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                  ? "text-sidebar-foreground"
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               )}
             >
               {active ? (
                 <motion.span
                   layoutId="stylist-dashboard-nav-active"
-                  className="absolute inset-0 rounded-xl bg-primary/10 shadow-sm ring-1 ring-primary/20"
+                  className="absolute inset-0 rounded-xl bg-sidebar-accent shadow-sm ring-1 ring-sidebar-ring/40"
                   transition={
                     reduceMotion ? { duration: 0 } : NAV_MOTION_TRANSITION
                   }
@@ -74,7 +74,7 @@ export function StylistSidebarNav({
                 {item.label}
               </span>
               {badge != null ? (
-                <span className="relative z-10 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-warning px-1 text-[0.65rem] font-semibold text-white">
+                <span className="relative z-10 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-accent px-1 text-[0.65rem] font-semibold text-brand-accent-foreground">
                   {badge > 99 ? "99+" : badge}
                 </span>
               ) : null}
@@ -97,7 +97,7 @@ export function StylistSidebarBrand({
       className="flex min-w-0 items-center gap-2.5 px-1"
     >
       <BrandMark size={40} className="size-10 shrink-0" />
-      <span className="truncate font-semibold tracking-tight">
+      <span className="truncate font-semibold tracking-tight text-sidebar-foreground">
         Stylist Verify
       </span>
     </HomeBrandLink>

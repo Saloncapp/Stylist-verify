@@ -150,7 +150,7 @@ export function SendInterestDialog({
                       <p
                         className={cn(
                           "font-semibold",
-                          alreadySent ? "text-muted-foreground" : "text-[#2563EB]"
+                          alreadySent ? "text-muted-foreground" : "text-primary"
                         )}
                       >
                         {job.role}

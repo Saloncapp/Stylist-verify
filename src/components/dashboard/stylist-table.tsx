@@ -97,7 +97,7 @@ export function StylistTable({ stylists }: { stylists: StylistRecord[] }) {
                     <td className="px-4 py-4 align-middle sm:px-5">
                       <p className="flex items-center gap-1.5 text-muted-foreground">
                         <Phone
-                          className="size-3.5 shrink-0 text-[#2563EB]"
+                          className="size-3.5 shrink-0 text-primary"
                           aria-hidden="true"
                         />
                         <span className="truncate whitespace-nowrap">

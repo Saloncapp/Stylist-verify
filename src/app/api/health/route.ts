@@ -2,8 +2,8 @@ import { connectDB } from "@/lib/db";
 import { jsonError, jsonSuccess } from "@/lib/api";
 
 /**
- * Lightweight warm-up endpoint: opens/caches the Mongo connection.
- * Used by /verify prefetch — keep this free of migrations and heavy work.
+ * Lightweight warm-up for serverless + Mongo.
+ * Used by /verify to connect early while the user types.
  */
 export async function GET() {
   try {

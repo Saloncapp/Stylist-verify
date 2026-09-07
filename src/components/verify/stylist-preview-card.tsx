@@ -92,7 +92,7 @@ export function StylistPreviewCard({
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background via-background/75 to-transparent sm:h-28" />
 
           <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-1.5 px-4 pb-3 text-center sm:pb-4">
-            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 transition-colors hover:text-blue-700">
+            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary transition-colors hover:text-primary/80">
               <ExternalLink className="size-3.5" />
               See more
             </span>

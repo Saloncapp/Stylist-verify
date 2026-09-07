@@ -7,9 +7,9 @@ const statConfig = [
     key: "total" as const,
     label: "Total Registered",
     icon: Users,
-    color: "text-[#2563EB]",
-    bg: "bg-[#2563EB]/10",
-    card: "border-l-4 border-l-[#2563EB] bg-[#2563EB]/5",
+    color: "text-primary",
+    bg: "bg-primary/10",
+    card: "border-l-4 border-l-primary bg-primary/5",
   },
   {
     key: "active" as const,

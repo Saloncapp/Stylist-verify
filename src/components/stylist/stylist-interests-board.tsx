@@ -74,7 +74,7 @@ function InterestCard({
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.2 }}
     >
-      <Card className="h-full border-l-4 border-l-[#2563EB] shadow-sm">
+      <Card className="h-full border-l-4 border-l-primary shadow-sm">
         <CardContent className="flex h-full flex-col gap-3 p-4 sm:p-5">
           <div className="flex items-start gap-3">
             <div className="relative flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-muted">
@@ -91,7 +91,7 @@ function InterestCard({
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate font-semibold text-[#2563EB]">
+              <p className="truncate font-semibold text-primary">
                 {interest.salonName}
               </p>
               {interest.salonAddress ? (
