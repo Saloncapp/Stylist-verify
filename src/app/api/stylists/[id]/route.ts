@@ -8,23 +8,25 @@ import {
 import { jsonError, jsonSuccess, zodErrorResponse } from "@/lib/api";
 import { formatStylist } from "@/lib/formatters";
 import { salonSnapshotFromSalon } from "@/lib/salon-sync";
-import { getAadhaarFromRecord } from "@/lib/aadhaar-crypto";
+import {
+  getAadhaarFromRecord,
+  hashAadhaar,
+  prepareAadhaarStorage,
+} from "@/lib/aadhaar-crypto";
 import {
   applyIdentityFields,
   applySalonEmploymentFields,
   findStylistForSalonQuery,
-  getActiveSalonEmployment,
+  getCurrentSalonEmployment,
   updateEntrySalonSnapshot,
 } from "@/lib/stylist-employment";
+import { buildEmploymentEntry } from "@/lib/stylist-employment-write";
 import Salon from "@/models/Salon";
 import Stylist from "@/models/Stylist";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
 }
-
-const FORMER_EMPLOYER_MESSAGE =
-  "Only the stylist's current employer can update this profile. Use Add Stylist or Hire to start a new employment.";
 
 export async function GET(_request: NextRequest, { params }: RouteParams) {
   try {
@@ -72,6 +74,11 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     await connectDB();
 
+    const salon = await Salon.findById(session.salonId);
+    if (!salon) {
+      return jsonError("Salon not found", 404);
+    }
+
     const stylist = await Stylist.findOne(
       findStylistForSalonQuery(id, session.salonId)
     );
@@ -80,25 +87,44 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       return jsonError("Stylist not found", 404);
     }
 
-    const active = getActiveSalonEmployment(stylist, session.salonId);
-    if (!active) {
-      return jsonError(FORMER_EMPLOYER_MESSAGE, 403);
-    }
-
-    if (active.status === status && status === "Active") {
+    const current = getCurrentSalonEmployment(stylist, session.salonId);
+    if (current?.status === status && status === "Active") {
       return jsonSuccess({
         stylist: formatStylist(stylist, session.salonId),
       });
     }
 
     const now = new Date();
-    active.status = status;
-    active.remark = remark;
-    active.updatedAt = now;
-    if (status === "Relieved" || status === "Abscond") {
-      active.leavingDate = now;
-    } else if (status === "Active") {
-      active.leavingDate = undefined;
+
+    if (current && current.status !== "Active" && status === "Active") {
+      const historyEntry = buildEmploymentEntry({
+        salon,
+        data: {
+          status,
+          remark,
+          level: current.level,
+          role: current.role,
+          employmentType: current.employmentType,
+        },
+        now,
+      });
+      stylist.employmentHistory.push(historyEntry);
+    } else if (current) {
+      current.status = status;
+      current.remark = remark;
+      current.updatedAt = now;
+      if (status === "Relieved" || status === "Abscond") {
+        current.leavingDate = now;
+      } else if (status === "Active") {
+        current.leavingDate = undefined;
+      }
+    } else {
+      const historyEntry = buildEmploymentEntry({
+        salon,
+        data: { status, remark },
+        now,
+      });
+      stylist.employmentHistory.push(historyEntry);
     }
 
     stylist.markModified("employmentHistory");
@@ -133,14 +159,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       return jsonError("Stylist not found", 404);
     }
 
-    const active = getActiveSalonEmployment(stylist, session.salonId);
-    if (!active) {
-      return jsonError(FORMER_EMPLOYER_MESSAGE, 403);
-    }
-
-    const parsed = createStylistProfileUpdateSchema(active.status).safeParse(
-      body
-    );
+    const current = getCurrentSalonEmployment(stylist, session.salonId);
+    const parsed = createStylistProfileUpdateSchema(
+      current?.status ?? "Active"
+    ).safeParse(body);
     if (!parsed.success) {
       return zodErrorResponse(parsed.error);
     }
@@ -148,46 +170,58 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const data = parsed.data;
     const currentAadhaar = getAadhaarFromRecord(stylist);
 
-    // Login identity is owned by the stylist account — salon cannot rebind it.
-    if (data.mobileNumber !== stylist.mobileNumber) {
-      return jsonError(
-        "Mobile number cannot be changed from the salon dashboard",
-        400
-      );
-    }
     if (data.aadhaarNumber !== currentAadhaar) {
-      return jsonError(
-        "Aadhaar cannot be changed from the salon dashboard",
-        400
-      );
+      const aadhaarHash = hashAadhaar(data.aadhaarNumber);
+      const existing = await Stylist.findOne({
+        _id: { $ne: stylist._id },
+        $or: [{ aadhaarHash }, { aadhaarNumber: data.aadhaarNumber }],
+      });
+      if (existing) {
+        return jsonError(
+          "A stylist profile with this Aadhaar already exists",
+          409
+        );
+      }
+
+      const { aadhaarEncrypted } = prepareAadhaarStorage(data.aadhaarNumber);
+      stylist.aadhaarHash = aadhaarHash;
+      stylist.aadhaarEncrypted = aadhaarEncrypted;
+      stylist.aadhaarNumber = undefined;
     }
 
-    applyIdentityFields(stylist, {
-      name: data.name,
-      address: data.address,
-      photoUrl: data.photoUrl,
-      mobileNumber: stylist.mobileNumber,
-    });
+    applyIdentityFields(stylist, data);
 
     const salon = await Salon.findById(session.salonId);
     if (!salon) {
       return jsonError("Salon not found", 404);
     }
 
-    // Status changes on the Active span only (e.g. Relieved). Re-hire uses Add/Hire flows.
-    applySalonEmploymentFields(active, data);
-    if (
-      data.status &&
-      data.status !== active.status &&
-      (data.status === "Relieved" || data.status === "Abscond")
-    ) {
-      const now = new Date();
-      active.status = data.status;
-      active.remark = data.remark;
-      active.updatedAt = now;
-      active.leavingDate = now;
+    if (current && current.status !== "Active" && data.status === "Active") {
+      const historyEntry = buildEmploymentEntry({
+        salon,
+        data,
+      });
+      applySalonEmploymentFields(historyEntry, data);
+      stylist.employmentHistory.push(historyEntry);
+    } else if (current) {
+      applySalonEmploymentFields(current, data);
+      const statusChanged = current.status !== data.status;
+      if (statusChanged && data.status) {
+        const now = new Date();
+        current.status = data.status;
+        current.remark = data.remark;
+        current.updatedAt = now;
+        if (data.status === "Relieved" || data.status === "Abscond") {
+          current.leavingDate = now;
+        } else if (data.status === "Active") {
+          current.leavingDate = undefined;
+        }
+      }
+      updateEntrySalonSnapshot(current, salonSnapshotFromSalon(salon));
+    } else {
+      const historyEntry = buildEmploymentEntry({ salon, data });
+      stylist.employmentHistory.push(historyEntry);
     }
-    updateEntrySalonSnapshot(active, salonSnapshotFromSalon(salon));
 
     stylist.markModified("employmentHistory");
     await stylist.save();

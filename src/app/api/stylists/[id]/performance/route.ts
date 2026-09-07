@@ -6,7 +6,8 @@ import { formatStylist } from "@/lib/formatters";
 import { performanceUpdateSchema } from "@/lib/validations";
 import {
   findStylistForSalonQuery,
-  getActiveSalonEmployment,
+  getCurrentSalonEmployment,
+  getSalonEmploymentEntries,
 } from "@/lib/stylist-employment";
 import Stylist from "@/models/Stylist";
 import { NextRequest } from "next/server";
@@ -62,13 +63,12 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       return jsonError("Stylist not found", 404);
     }
 
-    const current = getActiveSalonEmployment(stylist, session.salonId);
+    const salonEntries = getSalonEmploymentEntries(stylist, session.salonId);
+    const current =
+      getCurrentSalonEmployment(stylist, session.salonId) ?? salonEntries.at(-1);
 
     if (!current) {
-      return jsonError(
-        "Only the stylist's current employer can update performance",
-        403
-      );
+      return jsonError("No employment record found at your salon", 404);
     }
 
     current.performanceSummary = performanceSummary;
