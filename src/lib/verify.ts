@@ -180,10 +180,6 @@ export function groupRecordsByAadhaar(records: IStylist[]): IStylist[][] {
 }
 
 function getStablePersonKey(record: IStylist): string {
-  // Prefer indexed hash — avoids decrypting aadhaarEncrypted on the hot path.
-  const hash = record.aadhaarHash?.trim();
-  if (hash) return `hash:${hash}`;
-
   try {
     const digits = getAadhaarFromRecord(record).replace(/\D/g, "");
     if (digits.length === 12) return digits;
@@ -191,6 +187,8 @@ function getStablePersonKey(record: IStylist): string {
     // fall through
   }
 
+  const hash = record.aadhaarHash?.trim();
+  if (hash) return `hash:${hash}`;
   return `id:${record._id.toString()}`;
 }
 
@@ -212,64 +210,15 @@ export function buildVerifyQuery(input: {
   return null;
 }
 
-/** Fields needed for public locked previews (no PII ciphertext). */
-const VERIFY_PUBLIC_SELECT =
-  "name aadhaarHash employmentHistory.status employmentHistory.role employmentHistory.joiningDate employmentHistory.leavingDate employmentHistory.updatedAt employmentHistory.salonId employmentHistory.overallPerformanceRating employmentHistory.overallExperienceRating employmentHistory.technicalSkillRating employmentHistory.customerHandlingRating";
-
-/** Fields needed for authenticated private verify results. */
-const VERIFY_PRIVATE_SELECT =
-  "name mobileNumber address photoUrl employeeId aadhaarHash aadhaarEncrypted aadhaarNumber employmentHistory";
-
-/**
- * Indexed identity lookup for verify routes.
- * Uses lean docs + tight projection; limit is a safety cap (fields are unique).
- */
-export async function findStylistsForVerify(
-  query: Record<string, unknown>,
-  mode: "public" | "private"
-): Promise<IStylist[]> {
-  const Stylist = (await import("@/models/Stylist")).default;
-  const docs = await Stylist.find(query)
-    .select(mode === "public" ? VERIFY_PUBLIC_SELECT : VERIFY_PRIVATE_SELECT)
-    .limit(5)
-    .lean()
-    .exec();
-  return docs as unknown as IStylist[];
-}
-
-function toIso(
-  value: Date | string | undefined | null
-): string | undefined {
-  if (!value) return undefined;
-  if (typeof value === "string") return value;
-  const time = value.getTime();
-  return Number.isNaN(time) ? undefined : value.toISOString();
-}
-
 /** Privacy-safe preview for logged-out verification searches */
 export function buildPublicStylistPreview(
   records: IStylist[]
 ): PublicStylistPreview {
   const stylist = records[0];
-  const collapsed = collapseBySalon(
-    records.flatMap((record) =>
-      sortHistory(record).map((entry) => ({
-        salonId: entry.salonId.toString(),
-        joiningDate: toIso(entry.joiningDate),
-        leavingDate: toIso(entry.leavingDate),
-        updatedAt: toIso(entry.updatedAt) ?? new Date(0).toISOString(),
-        status: entry.status,
-        role: entry.role,
-        overallPerformanceRating: entry.overallPerformanceRating,
-        overallExperienceRating: entry.overallExperienceRating,
-        technicalSkillRating: entry.technicalSkillRating,
-        customerHandlingRating: entry.customerHandlingRating,
-      }))
-    )
-  );
-
+  const history = buildEmploymentHistory(records);
+  const uniqueSalonCount = new Set(history.map((entry) => entry.salonId)).size;
   const activeHistory =
-    collapsed.find((entry) => entry.status === "Active") ?? collapsed[0];
+    history.find((entry) => entry.status === "Active") ?? history[0];
   const activeEntry = stylist ? getActiveEntry(stylist) : undefined;
   const role = activeHistory?.role ?? activeEntry?.role;
   const publicRole =
@@ -278,9 +227,9 @@ export function buildPublicStylistPreview(
   return {
     displayName: maskStylistDisplayName(stylist?.name ?? "Stylist"),
     role: publicRole,
-    experienceLabel: formatPreviewExperience(collapsed),
-    employmentCount: collapsed.length || records.length,
-    performanceRating: calculateCareerPerformanceRating(collapsed),
+    experienceLabel: formatPreviewExperience(history),
+    employmentCount: uniqueSalonCount || records.length,
+    performanceRating: calculateCareerPerformanceRating(history),
   };
 }
 

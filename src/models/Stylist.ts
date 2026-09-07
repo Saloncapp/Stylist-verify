@@ -152,7 +152,6 @@ const StylistSchema = new Schema<IStylist>(
 
 StylistSchema.index({ employeeId: 1 }, { unique: true, sparse: true });
 StylistSchema.index({ aadhaarHash: 1 }, { unique: true, sparse: true });
-StylistSchema.index({ mobileNumber: 1 }, { unique: true });
 StylistSchema.index({ "employmentHistory.salonId": 1 });
 StylistSchema.index({
   "employmentHistory.salonId": 1,

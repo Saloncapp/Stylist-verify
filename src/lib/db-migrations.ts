@@ -11,9 +11,7 @@ import { connectDB } from "@/lib/db";
 export async function runDatabaseMigrations(): Promise<void> {
   const { unifyStylistProfiles } = await import("@/lib/stylist-merge");
   const { ensureHiringIndexes } = await import("@/lib/hiring");
-  const { ensureVerifyIndexes } = await import("@/lib/verify-indexes");
   await connectDB();
-  await ensureVerifyIndexes();
   await unifyStylistProfiles();
   await ensureHiringIndexes();
 }
