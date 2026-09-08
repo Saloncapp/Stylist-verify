@@ -12,11 +12,32 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   title: {
-    default: "Stylist Verify — Employment Verification for Salons",
+    default: "Stylist Verify - Employment Verification for Salons",
     template: "%s | Stylist Verify",
   },
   description:
     "Verify stylist employment history before hiring. A trusted verification platform for the salon industry.",
+  applicationName: "Stylist Verify",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL ?? "https://stylistverify.com"
+  ),
+  openGraph: {
+    title: "Stylist Verify - Employment Verification for Salons",
+    description:
+      "Verify stylist employment history before hiring. A trusted verification platform for the salon industry.",
+    siteName: "Stylist Verify",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Stylist Verify — Employment Verification for Salons",
+    description:
+      "Verify stylist employment history before hiring. A trusted verification platform for the salon industry.",
+  },
+  icons: {
+    icon: [{ url: "/icon.png" }, { url: "/favicon.png" }],
+    apple: [{ url: "/apple-icon.png" }],
+  },
 };
 
 export default function RootLayout({

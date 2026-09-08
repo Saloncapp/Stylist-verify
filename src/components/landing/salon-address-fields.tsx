@@ -214,7 +214,12 @@ function AlphabetFilterSelect({
       </button>
 
       {open && (
-        <div className="rounded-xl border border-border bg-background p-2 shadow-sm">
+        <div
+          className={cn(
+            "rounded-xl border border-border p-2 shadow-sm",
+            compact ? "bg-[#F4F8F7]" : "bg-background"
+          )}
+        >
           <div className="relative mb-2">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -474,8 +479,10 @@ export function SalonAddressFields({
 
       <div
         className={cn(
-          "rounded-xl border border-border/80 bg-muted/20",
-          compact ? "space-y-2.5 p-3" : "space-y-3 p-3.5 sm:p-4"
+          "rounded-xl border border-border/80",
+          compact
+            ? "space-y-2.5 bg-[#F4F8F7] p-3"
+            : "space-y-3 bg-muted/20 p-3.5 sm:p-4"
         )}
       >
         <div className={cn("grid grid-cols-1", gap)}>
@@ -484,7 +491,7 @@ export function SalonAddressFields({
             <div className="relative">
               <Input
                 id="salon-pin"
-                className={controlHeight}
+                className={cn(controlHeight, compact && "bg-[#F4F8F7]")}
                 inputMode="numeric"
                 maxLength={6}
                 placeholder="Enter 6-digit PIN"

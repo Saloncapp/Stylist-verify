@@ -94,7 +94,7 @@ export function StylistSearchCard({
                   className={cn(
                     "rounded-md px-2.5 py-2 text-left transition-colors sm:px-3",
                     selected
-                      ? "bg-background text-foreground shadow-sm ring-1 ring-primary/25"
+                      ? "bg-[#0F6B5F] text-white shadow-sm"
                       : "text-muted-foreground hover:text-primary"
                   )}
                   onClick={() => onSearchTypeChange(opt.value)}
@@ -105,7 +105,7 @@ export function StylistSearchCard({
                   <span
                     className={cn(
                       "mt-0.5 block text-[0.65rem] leading-tight",
-                      selected ? "text-primary" : "text-muted-foreground"
+                      selected ? "text-white/80" : "text-muted-foreground"
                     )}
                   >
                     {opt.hint}

@@ -528,7 +528,7 @@ export function ContinueWithMobileForm() {
     <Card
       id="continue-with-mobile"
       className={cn(
-        "flex w-full scroll-mt-24 flex-col gap-0 overflow-hidden rounded-2xl border border-primary/40 bg-primary/[0.04] py-0 shadow-sm",
+        "flex w-full scroll-mt-24 flex-col gap-0 overflow-hidden rounded-2xl border border-primary/40 !bg-[#F4F8F7] py-0 text-card-foreground shadow-sm",
         (step === "salon" || step === "recover") &&
           "max-h-[min(36rem,calc(100dvh-5.5rem))] sm:max-h-[min(38rem,calc(100dvh-5.5rem))] lg:max-h-[calc(100dvh-5.5rem)]"
       )}
@@ -572,7 +572,7 @@ export function ContinueWithMobileForm() {
 
       <CardContent
         className={cn(
-          "flex min-h-0 flex-1 flex-col bg-card/80",
+          "flex min-h-0 flex-1 flex-col !bg-[#F4F8F7]",
           step === "salon" || step === "recover"
             ? "overflow-y-auto overscroll-contain px-4 py-3.5 sm:px-5 sm:py-4"
             : "px-6 py-6 sm:px-7 sm:py-7"
@@ -614,7 +614,7 @@ export function ContinueWithMobileForm() {
                       Don&apos;t have an account?{" "}
                       <button
                         type="button"
-                        className="font-medium text-primary underline-offset-4 hover:underline"
+                        className="cursor-pointer font-medium text-primary underline-offset-4 transition-colors hover:text-[#B5945F] hover:underline focus-visible:text-[#B5945F] dark:hover:text-[#B5945F]"
                         onClick={() => {
                           setAuthMode("register");
                           setPending(null);
@@ -629,7 +629,7 @@ export function ContinueWithMobileForm() {
                     <div className="text-center">
                       <button
                         type="button"
-                        className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+                        className="cursor-pointer text-sm font-medium text-primary underline-offset-4 transition-colors hover:text-[#B5945F] hover:underline focus-visible:text-[#B5945F] dark:hover:text-[#B5945F]"
                         onClick={() => setStep("recover")}
                       >
                         Recover Account
@@ -673,7 +673,7 @@ export function ContinueWithMobileForm() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="h-auto justify-start gap-3 px-4 py-4 text-left"
+                  className="h-auto justify-start gap-3 border-border !bg-[#F4F8F7] px-4 py-4 text-left hover:!bg-[#E8F0EE]"
                   onClick={() =>
                     pending
                       ? selectRoleAfterOtp("salon")
@@ -681,7 +681,7 @@ export function ContinueWithMobileForm() {
                   }
                   disabled={busy}
                 >
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border bg-muted/40">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border bg-[#E8F0EE]">
                     <Building2 className="size-5 text-primary" />
                   </span>
                   <span>
@@ -696,7 +696,7 @@ export function ContinueWithMobileForm() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="h-auto justify-start gap-3 px-4 py-4 text-left"
+                  className="h-auto justify-start gap-3 border-border !bg-[#F4F8F7] px-4 py-4 text-left hover:!bg-[#E8F0EE]"
                   onClick={() =>
                     pending
                       ? selectRoleAfterOtp("stylist")
@@ -704,7 +704,7 @@ export function ContinueWithMobileForm() {
                   }
                   disabled={busy}
                 >
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border bg-muted/40">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border bg-[#E8F0EE]">
                     <Scissors className="size-5 text-primary" />
                   </span>
                   <span>
@@ -740,7 +740,7 @@ export function ContinueWithMobileForm() {
                   <Label htmlFor="salonName">Salon Name</Label>
                   <Input
                     id="salonName"
-                    className="h-9"
+                    className="h-9 bg-[#F4F8F7]"
                     {...salonForm.register("salonName", {
                       onChange: () => salonForm.clearErrors("salonName"),
                     })}
@@ -800,7 +800,7 @@ export function ContinueWithMobileForm() {
                   }}
                 />
 
-                <div className="sticky bottom-0 space-y-1.5 bg-card pt-1">
+                <div className="sticky bottom-0 space-y-1.5 !bg-[#F4F8F7] pt-1">
                   <Button type="submit" className="h-9 w-full" disabled={busy}>
                     {busy && <Loader2 className="mr-2 size-4 animate-spin" />}
                     Create salon account
@@ -832,7 +832,7 @@ export function ContinueWithMobileForm() {
                   </RequiredFieldLabel>
                   <Input
                     id="aadhaarNumber"
-                    className="h-11"
+                    className="h-11 bg-[#F4F8F7]"
                     inputMode="numeric"
                     maxLength={12}
                     aria-required="true"
@@ -896,7 +896,7 @@ export function ContinueWithMobileForm() {
                   </RequiredFieldLabel>
                   <Input
                     id="stylistName"
-                    className="h-11"
+                    className="h-11 bg-[#F4F8F7]"
                     aria-required="true"
                     disabled={
                       aadhaarLookup.status === "found" &&

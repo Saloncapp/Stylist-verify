@@ -15,7 +15,7 @@ export function Navbar({ variant = "landing" }: NavbarProps) {
   const playIntro = variant === "landing" && !reduceMotion;
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/80 bg-background/95 backdrop-blur-md">
+    <header className="sticky top-0 z-50 w-full bg-[#0F6B5F] text-white">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <HomeBrandLink className="group flex shrink-0 items-center gap-2.5">
           <motion.span
@@ -28,15 +28,15 @@ export function Navbar({ variant = "landing" }: NavbarProps) {
                 : { duration: 0 }
             }
           >
-            <BrandMark size={60} className="size-16" priority />
-            <span className="text-xl font-bold tracking-tight text-foreground transition-colors group-hover:text-primary sm:text-2xl">
+            <BrandMark size={48} className="size-12" variant="navbar" priority />
+            <span className="text-xl font-bold tracking-tight text-white transition-colors group-hover:text-[#B5945F] group-focus-visible:text-[#B5945F] dark:text-white dark:group-hover:text-[#B5945F] dark:group-focus-visible:text-[#B5945F] sm:text-2xl">
               Stylist Verify
             </span>
           </motion.span>
         </HomeBrandLink>
 
         {variant === "landing" && (
-          <nav className="hidden flex-1 items-center justify-center gap-8 md:flex">
+          <nav className="hidden flex-1 items-center justify-center gap-7 md:flex lg:gap-8">
             {(
               [
                 { href: "#why", label: "Why Stylist Verify" },
@@ -48,7 +48,7 @@ export function Navbar({ variant = "landing" }: NavbarProps) {
               <a
                 key={item.href}
                 href={item.href}
-                className="text-sm font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-primary hover:underline focus-visible:text-primary focus-visible:underline focus-visible:outline-none"
+                className="text-sm font-medium text-white/80 underline-offset-4 transition-colors hover:text-[#B5945F] hover:underline focus-visible:text-[#B5945F] focus-visible:underline focus-visible:outline-none dark:text-white/80 dark:hover:text-[#B5945F] dark:focus-visible:text-[#B5945F]"
               >
                 {item.label}
               </a>
@@ -57,9 +57,13 @@ export function Navbar({ variant = "landing" }: NavbarProps) {
         )}
 
         <div className="ml-auto flex shrink-0 items-center justify-end">
-          <ThemeToggle />
+          <ThemeToggle className="text-white hover:bg-white/10 hover:text-[#B5945F] dark:hover:text-[#B5945F]" />
           {variant === "auth" && (
-            <LinkButton href={HOME_HERO_HREF} variant="ghost" className="ml-2">
+            <LinkButton
+              href={HOME_HERO_HREF}
+              variant="ghost"
+              className="ml-2 text-white hover:bg-white/10 hover:text-[#B5945F] dark:hover:text-[#B5945F]"
+            >
               Home
             </LinkButton>
           )}

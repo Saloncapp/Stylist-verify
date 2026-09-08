@@ -32,7 +32,7 @@ export function HeroSection() {
                   : { duration: 0.4, delay: 0.08, ease: [0.22, 1, 0.36, 1] }
               }
             >
-              <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm font-medium text-primary">
+              <span className="inline-flex items-center gap-2 rounded-full border border-brand-accent/30 bg-brand-accent-soft px-4 py-1.5 text-sm font-medium text-brand-accent">
                 <Shield className="size-4" />
                 Trusted Employment Verification
               </span>
@@ -53,7 +53,7 @@ export function HeroSection() {
             </motion.h1>
 
             <motion.p
-              className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground"
+              className="mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-[1.05rem]"
               initial={reduceMotion ? false : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={
@@ -62,8 +62,8 @@ export function HeroSection() {
                   : { duration: 0.4, delay: 0.28, ease: [0.22, 1, 0.36, 1] }
               }
             >
-              Stylist Verify helps salon owners make informed hiring decisions with
-              verified employment records — not blacklists, just transparent history.
+              Access verified stylist employment history in one place. Make confident
+              hiring decisions with transparent records - without blacklists or guesswork.
             </motion.p>
 
             <motion.div
@@ -79,19 +79,22 @@ export function HeroSection() {
               <LinkButton
                 href="/verify"
                 size="lg"
-                className="relative h-12 w-full max-w-xs overflow-hidden px-8 text-base sm:w-auto"
+                className="group relative h-12 w-full max-w-xs overflow-hidden px-8 text-base transition-colors hover:bg-[#B5945F] hover:text-[#0B2F2A] dark:hover:bg-[#B5945F] dark:hover:text-[#0B2F2A] sm:w-auto"
               >
                 {!reduceMotion ? (
                   <motion.span
                     aria-hidden
                     className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 -skew-x-12 bg-gradient-to-r from-transparent via-brand-highlight/50 to-transparent"
                     initial={{ x: "-120%", opacity: 0 }}
-                    animate={{ x: "280%", opacity: [0, 1, 1, 0] }}
+                    animate={{
+                      x: ["-120%", "280%", "-120%"],
+                      opacity: [0, 1, 0],
+                    }}
                     transition={{
-                      duration: 0.55,
+                      duration: 1.1,
                       delay: 0.72,
                       ease: "easeInOut",
-                      times: [0, 0.15, 0.85, 1],
+                      times: [0, 0.5, 1],
                     }}
                   />
                 ) : null}
@@ -102,23 +105,24 @@ export function HeroSection() {
                     reduceMotion
                       ? { scale: 1, opacity: 1, rotate: 0 }
                       : {
-                          scale: [0.85, 1.12, 1],
-                          opacity: [0.6, 1, 1],
-                          rotate: [0, -12, 0],
+                          // Forward once, then reverse once, settle at rest
+                          scale: [0.85, 1.12, 1, 1.12, 0.85, 1],
+                          opacity: [0.6, 1, 1, 1, 0.6, 1],
+                          rotate: [0, -12, 0, -12, 0, 0],
                         }
                   }
                   transition={
                     reduceMotion
                       ? { duration: 0 }
                       : {
-                          duration: 0.5,
+                          duration: 1,
                           delay: 0.55,
                           ease: [0.22, 1, 0.36, 1],
-                          times: [0, 0.45, 1],
+                          times: [0, 0.18, 0.36, 0.54, 0.72, 1],
                         }
                   }
                 >
-                  <Search className="size-5" />
+                  <Search className="size-5 transition-transform duration-200 ease-out group-hover:scale-125" />
                 </motion.span>
                 <span className="relative z-20">Verify Stylist</span>
               </LinkButton>
@@ -142,11 +146,13 @@ export function HeroSection() {
             ].map((stat) => (
               <div
                 key={stat.label}
-                className="rounded-2xl border border-border bg-card/80 p-5 text-center shadow-sm"
+                className="rounded-2xl border border-border bg-[#F4F8F7] p-5 text-center shadow-sm"
               >
-                <stat.icon className="mx-auto size-5 text-primary" />
-                <p className="mt-2 text-xl font-bold">{stat.value}</p>
-                <p className="text-sm text-muted-foreground">{stat.label}</p>
+                <stat.icon className="mx-auto size-5 text-brand-accent" />
+                <p className="mt-2 text-xl font-bold text-brand-accent">
+                  {stat.value}
+                </p>
+                <p className="text-sm text-[#0F6B5F]">{stat.label}</p>
               </div>
             ))}
           </motion.div>

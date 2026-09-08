@@ -54,7 +54,7 @@ export function StylistSidebarNav({
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
                 active
                   ? "text-sidebar-foreground"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-[#B5945F] dark:hover:text-[#B5945F]"
               )}
             >
               {active ? (
@@ -94,10 +94,10 @@ export function StylistSidebarBrand({
   return (
     <HomeBrandLink
       onClick={onNavigate}
-      className="flex min-w-0 items-center gap-2.5 px-1"
+      className="group flex min-w-0 items-center gap-2.5 px-1"
     >
-      <BrandMark size={40} className="size-10 shrink-0" />
-      <span className="truncate font-semibold tracking-tight text-sidebar-foreground">
+      <BrandMark size={40} className="size-10 shrink-0" variant="navbar" />
+      <span className="truncate font-semibold tracking-tight text-sidebar-foreground transition-colors group-hover:text-[#B5945F] group-focus-visible:text-[#B5945F] dark:group-hover:text-[#B5945F] dark:group-focus-visible:text-[#B5945F]">
         Stylist Verify
       </span>
     </HomeBrandLink>
