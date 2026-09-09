@@ -48,7 +48,7 @@ export function Navbar({ variant = "landing" }: NavbarProps) {
               <a
                 key={item.href}
                 href={item.href}
-                className="text-sm font-medium text-white/80 underline-offset-4 transition-colors hover:text-[#B5945F] hover:underline focus-visible:text-[#B5945F] focus-visible:underline focus-visible:outline-none dark:text-white/80 dark:hover:text-[#B5945F] dark:focus-visible:text-[#B5945F]"
+                className="relative pb-0.5 text-[0.85rem] font-medium text-[#F5EDDF] transition-colors duration-300 ease-out hover:text-[#B5945F] focus-visible:text-[#B5945F] focus-visible:outline-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:origin-left after:scale-x-0 after:bg-[#B5945F] after:transition-transform after:duration-300 after:ease-out hover:after:scale-x-100 focus-visible:after:scale-x-100"
               >
                 {item.label}
               </a>
@@ -57,14 +57,14 @@ export function Navbar({ variant = "landing" }: NavbarProps) {
         )}
 
         <div className="ml-auto flex shrink-0 items-center justify-end">
-          <ThemeToggle className="text-white hover:bg-white/10 hover:text-[#B5945F] dark:hover:text-[#B5945F]" />
+          <ThemeToggle className="relative overflow-hidden text-white transition-colors duration-300 ease-out hover:bg-transparent hover:text-[#0B2F2A] dark:hover:text-[#0B2F2A] before:absolute before:inset-0 before:origin-left before:scale-x-0 before:bg-[#B5945F] before:transition-transform before:duration-300 before:ease-out hover:before:scale-x-100 focus-visible:before:scale-x-100 [&_svg]:relative [&_svg]:z-10" />
           {variant === "auth" && (
             <LinkButton
               href={HOME_HERO_HREF}
               variant="ghost"
-              className="ml-2 text-white hover:bg-white/10 hover:text-[#B5945F] dark:hover:text-[#B5945F]"
+              className="relative ml-2 overflow-hidden text-white transition-colors duration-300 ease-out hover:bg-transparent hover:text-[#0B2F2A] dark:hover:text-[#0B2F2A] before:absolute before:inset-0 before:origin-left before:scale-x-0 before:bg-[#B5945F] before:transition-transform before:duration-300 before:ease-out hover:before:scale-x-100 focus-visible:before:scale-x-100"
             >
-              Home
+              <span className="relative z-10">Home</span>
             </LinkButton>
           )}
         </div>

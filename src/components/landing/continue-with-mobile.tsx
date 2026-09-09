@@ -535,7 +535,7 @@ export function ContinueWithMobileForm() {
     >
       <CardHeader
         className={cn(
-          "shrink-0 space-y-0 border-b border-primary/25 bg-primary/10",
+          "shrink-0 space-y-0 border-b border-white/15 !bg-[#0F6B5F]",
           step === "salon" || step === "recover"
             ? "px-4 py-3.5 sm:px-5 sm:py-4"
             : "px-6 py-5 sm:px-7 sm:py-6"
@@ -545,7 +545,7 @@ export function ContinueWithMobileForm() {
           <div className="flex items-center gap-3">
             <div
               className={cn(
-                "flex shrink-0 items-center justify-center rounded-xl border border-primary/40 bg-primary/15 text-primary shadow-sm",
+                "flex shrink-0 items-center justify-center rounded-xl border border-white/30 bg-white/10 text-white shadow-sm",
                 step === "salon" || step === "recover" ? "size-9" : "size-10"
               )}
             >
@@ -557,14 +557,14 @@ export function ContinueWithMobileForm() {
             </div>
             <CardTitle
               className={cn(
-                "min-w-0 font-semibold tracking-tight text-primary",
+                "min-w-0 font-semibold tracking-tight text-white",
                 step === "salon" || step === "recover" ? "text-lg" : "text-xl"
               )}
             >
               {header.title}
             </CardTitle>
           </div>
-          <p className="text-sm leading-relaxed text-primary/75">
+          <p className="text-sm leading-relaxed text-white">
             {header.subtitle}
           </p>
         </div>

@@ -111,7 +111,7 @@ async function knockOutExterior(size) {
     for (const i of clear) buf[i + 3] = 0;
   }
 
-  // Pure white interior
+  // Pure white interior (shield fill etc.)
   for (let i = 0; i < buf.length; i += 4) {
     if (buf[i + 3] < 10) continue;
     if (isNearWhite(i, 210)) {
@@ -119,6 +119,58 @@ async function knockOutExterior(size) {
       buf[i + 1] = 255;
       buf[i + 2] = 255;
       buf[i + 3] = 255;
+    }
+  }
+
+  // Scissor finger rings should stay open (transparent), not white — matches teal chrome.
+  {
+    const visitedH = new Uint8Array(w * h);
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const p0 = y * w + x;
+        if (visitedH[p0] || !isNearWhite(p0 * 4, 230)) continue;
+        const q = [p0];
+        visitedH[p0] = 1;
+        const pixels = [p0];
+        let minX = x,
+          maxX = x,
+          minY = y,
+          maxY = y;
+        while (q.length) {
+          const p = q.pop();
+          const cx = p % w;
+          const cy = (p / w) | 0;
+          if (cx < minX) minX = cx;
+          if (cx > maxX) maxX = cx;
+          if (cy < minY) minY = cy;
+          if (cy > maxY) maxY = cy;
+          for (const [dx, dy] of [
+            [1, 0],
+            [-1, 0],
+            [0, 1],
+            [0, -1],
+          ]) {
+            const nx = cx + dx;
+            const ny = cy + dy;
+            if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+            const np = ny * w + nx;
+            if (visitedH[np] || !isNearWhite(np * 4, 230)) continue;
+            visitedH[np] = 1;
+            q.push(np);
+            pixels.push(np);
+          }
+        }
+        const bw = maxX - minX + 1;
+        const bh = maxY - minY + 1;
+        const cy = (minY + maxY) / 2;
+        const isHandle =
+          pixels.length > Math.round(size * 0.2) &&
+          pixels.length < Math.round(size * size * 0.05) &&
+          cy > h * 0.55 &&
+          Math.abs(bw - bh) < bw * 0.35;
+        if (!isHandle) continue;
+        for (const p of pixels) buf[p * 4 + 3] = 0;
+      }
     }
   }
 

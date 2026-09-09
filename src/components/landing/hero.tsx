@@ -79,7 +79,7 @@ export function HeroSection() {
               <LinkButton
                 href="/verify"
                 size="lg"
-                className="group relative h-12 w-full max-w-xs overflow-hidden px-8 text-base transition-colors hover:bg-[#B5945F] hover:text-[#0B2F2A] dark:hover:bg-[#B5945F] dark:hover:text-[#0B2F2A] sm:w-auto"
+                className="group relative h-12 w-full max-w-xs overflow-hidden px-8 text-base transition-[background-color,color] duration-500 ease-out hover:bg-[#B5945F] hover:text-[#0B2F2A] dark:hover:bg-[#B5945F] dark:hover:text-[#0B2F2A] sm:w-auto"
               >
                 {!reduceMotion ? (
                   <motion.span
