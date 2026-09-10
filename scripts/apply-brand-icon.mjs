@@ -17,7 +17,7 @@ const SOURCE =
   process.argv[2] ||
   "C:/Users/salon/.cursor/projects/f-Project/assets/c__Users_salon_AppData_Roaming_Cursor_User_workspaceStorage_5daf58fc2c86b332876289f8b56f75e6_images_Gemini_Generated_Image_ju56x3ju56x3ju56__1_-2926e432-a9d3-49b8-8f7b-a14705ecc2b1.png";
 
-const TEAL = { r: 0x0f, g: 0x6b, b: 0x5f, alpha: 1 };
+const WHITE_PLATE = { r: 255, g: 255, b: 255, alpha: 1 };
 
 async function knockOutExterior(size) {
   const { data, info } = await sharp(SOURCE)
@@ -244,16 +244,16 @@ async function main() {
       })
       .png();
 
-  // Web: transparent around shield
-  await toPng(512).toFile(path.join(BRAND_DIR, "stylist-verify-mark.png"));
+  // Web: transparent around shield (paths match BrandMark + layout metadata)
+  await toPng(1024).toFile(path.join(BRAND_DIR, "stylist-verify-mark-v6.png"));
   await toPng(256).toFile(path.join(PUBLIC, "icon.png"));
   await toPng(180).toFile(path.join(PUBLIC, "apple-icon.png"));
   await toPng(32).toFile(path.join(PUBLIC, "favicon.png"));
 
-  // App: login + splash (transparent)
-  await toPng(512).toFile(path.join(APP_IMG, "brand-mark.png"));
-  await toPng(512).toFile(path.join(APP_IMG, "splash-icon.png"));
-  await toPng(48).toFile(path.join(APP_IMG, "favicon.png"));
+  // App: login + splash (paths match app.json / requires)
+  await toPng(1024).toFile(path.join(APP_IMG, "brand-mark-v7.png"));
+  await toPng(1024).toFile(path.join(APP_IMG, "splash-icon-v7.png"));
+  await toPng(48).toFile(path.join(APP_IMG, "favicon-v6.png"));
 
   // Android adaptive foreground (safe zone)
   const fg = await toPng(660).toBuffer();
@@ -267,27 +267,27 @@ async function main() {
   })
     .composite([{ input: fg, gravity: "centre" }])
     .png()
-    .toFile(path.join(APP_IMG, "android-icon-foreground.png"));
+    .toFile(path.join(APP_IMG, "android-icon-foreground-v6.png"));
 
   await sharp({
     create: {
       width: 1024,
       height: 1024,
       channels: 3,
-      background: { r: 15, g: 107, b: 95 },
+      background: { r: 255, g: 255, b: 255 },
     },
   })
     .png()
-    .toFile(path.join(APP_IMG, "android-icon-background.png"));
+    .toFile(path.join(APP_IMG, "android-icon-background-v6.png"));
 
-  // iOS / Expo icon needs opaque plate
+  // iOS / Expo icon needs opaque plate (white — not brand primary)
   const iconLogo = await toPng(780).toBuffer();
   await sharp({
-    create: { width: 1024, height: 1024, channels: 4, background: TEAL },
+    create: { width: 1024, height: 1024, channels: 4, background: WHITE_PLATE },
   })
     .composite([{ input: iconLogo, gravity: "centre" }])
     .png()
-    .toFile(path.join(APP_IMG, "icon.png"));
+    .toFile(path.join(APP_IMG, "icon-v6.png"));
 
   // Monochrome
   const monoBuf = Buffer.from(buf);
@@ -318,9 +318,9 @@ async function main() {
   })
     .composite([{ input: monoLogo, gravity: "centre" }])
     .png()
-    .toFile(path.join(APP_IMG, "android-icon-monochrome.png"));
+    .toFile(path.join(APP_IMG, "android-icon-monochrome-v6.png"));
 
-  console.log("Brand icons written (transparent around shield)");
+  console.log("Brand icons written to currently used asset paths");
 }
 
 main().catch((e) => {

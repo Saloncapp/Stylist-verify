@@ -2,7 +2,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 /** Shared mark — transparent around shield for teal chrome (1024px). */
-const BRAND_MARK_SRC = "/brand/stylist-verify-mark-v4.png";
+const BRAND_MARK_SRC = "/brand/stylist-verify-mark-v6.png";
 
 type BrandMarkProps = {
   className?: string;
