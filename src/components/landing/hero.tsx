@@ -146,13 +146,13 @@ export function HeroSection() {
             ].map((stat) => (
               <div
                 key={stat.label}
-                className="rounded-2xl border border-border bg-[#F4F8F7] p-5 text-center shadow-sm"
+                className="rounded-2xl border border-[#D5E5E1] bg-[#F4F8F7] p-5 text-center shadow-[0_4px_12px_-2px_rgba(11,47,42,0.12),0_16px_40px_-12px_rgba(15,107,95,0.28),0_0_0_1px_rgba(15,107,95,0.06)]"
               >
-                <stat.icon className="mx-auto size-5 text-brand-accent" />
-                <p className="mt-2 text-xl font-bold text-brand-accent">
+                <stat.icon className="mx-auto size-5 text-[#B5945F]" />
+                <p className="mt-2 text-xl font-bold text-[#0A544A]">
                   {stat.value}
                 </p>
-                <p className="text-sm text-[#0F6B5F]">{stat.label}</p>
+                <p className="text-sm text-[#0A544A]">{stat.label}</p>
               </div>
             ))}
           </motion.div>

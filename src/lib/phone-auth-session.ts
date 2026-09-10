@@ -31,16 +31,39 @@ export type PhoneAuthSessionResult =
       registrationToken: string;
     };
 
+async function ensureFirebaseUid(
+  kind: "salon" | "stylist",
+  id: string,
+  currentUid: string | null | undefined,
+  nextUid: string
+): Promise<void> {
+  if (currentUid === nextUid) return;
+  if (kind === "salon") {
+    await Salon.updateOne({ _id: id }, { $set: { firebaseUid: nextUid } });
+    return;
+  }
+  await Stylist.updateOne({ _id: id }, { $set: { firebaseUid: nextUid } });
+}
+
 export async function resolvePhoneAuthSession(
   uid: string,
   phone: string
 ): Promise<PhoneAuthSessionResult> {
   await connectDB();
 
-  const salon = await Salon.findOne({ salonNumber: phone });
+  const [salon, stylist] = await Promise.all([
+    Salon.findOne({ salonNumber: phone }),
+    Stylist.findOne({ mobileNumber: phone }),
+  ]);
+
   if (salon) {
+    await ensureFirebaseUid(
+      "salon",
+      salon._id.toString(),
+      salon.firebaseUid,
+      uid
+    );
     salon.firebaseUid = uid;
-    await salon.save();
 
     const token = await createSession({
       uid,
@@ -59,10 +82,14 @@ export async function resolvePhoneAuthSession(
     };
   }
 
-  const stylist = await Stylist.findOne({ mobileNumber: phone });
   if (stylist) {
+    await ensureFirebaseUid(
+      "stylist",
+      stylist._id.toString(),
+      stylist.firebaseUid,
+      uid
+    );
     stylist.firebaseUid = uid;
-    await stylist.save();
 
     let aadhaarMasked: string | undefined;
     try {

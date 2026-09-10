@@ -101,7 +101,6 @@ export function RegisterForm() {
         toast.success("Account found — signed in");
         sessionStorage.removeItem("sv_otp_pending");
         router.push(result.data.redirectTo as string);
-        router.refresh();
         return;
       }
       const next = { idToken, phone };
@@ -112,11 +111,7 @@ export function RegisterForm() {
       toast.error("Something went wrong");
     } finally {
       setBusy(false);
-      try {
-        await signOut(getFirebaseAuth());
-      } catch {
-        // ignore
-      }
+      void signOut(getFirebaseAuth()).catch(() => {});
     }
   }
 

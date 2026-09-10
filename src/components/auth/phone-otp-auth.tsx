@@ -69,7 +69,9 @@ export function PhoneOtpAuth({
   const [confirmation, setConfirmation] = useState<ConfirmationResult | null>(
     null
   );
+  const [signingIn, setSigningIn] = useState(false);
   const phoneInputRef = useRef<HTMLInputElement>(null);
+  const warmedDb = useRef(false);
 
   const comfortable = density === "comfortable";
   const primaryAccent = accent === "primary";
@@ -86,9 +88,21 @@ export function PhoneOtpAuth({
     ? "border-primary/40 focus-visible:border-primary focus-visible:ring-primary/25"
     : undefined;
 
+  function warmDatabase() {
+    if (warmedDb.current) return;
+    warmedDb.current = true;
+    void fetch("/api/health", { method: "GET", cache: "no-store" }).catch(
+      () => {}
+    );
+  }
+
   useEffect(() => {
     return () => clearRecaptchaVerifier(recaptchaId);
   }, [recaptchaId]);
+
+  useEffect(() => {
+    if (autoFocus) warmDatabase();
+  }, [autoFocus]);
 
   useAutofocus(phoneInputRef, autoFocus && !otpSent && !disabled, [
     otpSent,
@@ -111,8 +125,9 @@ export function PhoneOtpAuth({
     }
     try {
       setSending(true);
-      clearRecaptchaVerifier(recaptchaId);
+      warmDatabase();
       const auth = getFirebaseAuth();
+      // Reuse invisible reCAPTCHA when possible — recreating each send adds latency.
       const verifier = getOrCreateRecaptchaVerifier(recaptchaId);
       const confirmationResult = await signInWithPhoneNumber(
         auth,
@@ -144,15 +159,18 @@ export function PhoneOtpAuth({
     }
     try {
       setVerifying(true);
+      setSigningIn(false);
       const credential = await confirmation.confirm(otp);
       const idToken = await credential.user.getIdToken();
       clearRecaptchaVerifier(recaptchaId);
+      setSigningIn(true);
       await onVerified(idToken, phone);
     } catch (error) {
       console.error("Verify OTP error:", error);
       toast.error("Invalid OTP. Try again.");
     } finally {
       setVerifying(false);
+      setSigningIn(false);
     }
   }
 
@@ -161,6 +179,7 @@ export function PhoneOtpAuth({
     setOtp("");
     setConfirmation(null);
     setResendIn(0);
+    setSigningIn(false);
     clearRecaptchaVerifier(recaptchaId);
   }
 
@@ -233,6 +252,7 @@ export function PhoneOtpAuth({
             value={phone}
             disabled={busy || otpSent}
             autoFocus={autoFocus && !otpSent}
+            onFocus={warmDatabase}
             onChange={(e) => {
               handleDigitInput(e, 10);
               setPhone(e.target.value);
@@ -264,7 +284,7 @@ export function PhoneOtpAuth({
             disabled={busy || phone.length !== 10}
           >
             {sending && <Loader2 className="mr-2 size-4 animate-spin" />}
-            {continueLabel}
+            {sending ? "Sending OTP…" : continueLabel}
           </Button>
           {helperText && (
             <p className="text-center text-xs leading-relaxed text-muted-foreground sm:text-[0.8125rem]">
@@ -314,7 +334,11 @@ export function PhoneOtpAuth({
             disabled={busy || otp.length !== 6}
           >
             {verifying && <Loader2 className="mr-2 size-4 animate-spin" />}
-            {submitLabel}
+            {signingIn
+              ? "Signing you in…"
+              : verifying
+                ? "Verifying OTP…"
+                : submitLabel}
           </Button>
 
           <div className="flex min-h-5 items-center justify-center text-sm">

@@ -156,6 +156,11 @@
 }
 
 @layer utilities {
+  .bg-sidebar-gradient {
+    background-color: #0f6b5f;
+    background-image: linear-gradient(90deg, #0f6b5f 0%, #0a544a 100%);
+  }
+
   .animate-shimmer {
     background-image: linear-gradient(
       90deg,

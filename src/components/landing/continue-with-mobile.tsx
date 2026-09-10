@@ -175,6 +175,13 @@ export function ContinueWithMobileForm() {
 
   useAutofocusById("aadhaarNumber", step === "stylist", [step]);
 
+  // Warm Mongo while the user opens Continue with Mobile (faster post-OTP session).
+  useEffect(() => {
+    void fetch("/api/health", { method: "GET", cache: "no-store" }).catch(
+      () => undefined
+    );
+  }, []);
+
   const resetToSignIn = useCallback(() => {
     setStep("phone");
     setAuthMode("signin");
@@ -277,12 +284,11 @@ export function ContinueWithMobileForm() {
 
       toast.success("Signed in");
       router.push(result.data.redirectTo as string);
-      router.refresh();
     } catch {
       toast.error("Something went wrong");
     } finally {
       setBusy(false);
-      await clearFirebase();
+      void clearFirebase();
     }
   }
 
@@ -528,7 +534,7 @@ export function ContinueWithMobileForm() {
     <Card
       id="continue-with-mobile"
       className={cn(
-        "flex w-full scroll-mt-24 flex-col gap-0 overflow-hidden rounded-2xl border border-primary/40 !bg-[#F4F8F7] py-0 text-card-foreground shadow-sm",
+        "flex w-full scroll-mt-24 flex-col gap-0 overflow-hidden rounded-2xl border border-[#D5E5E1] !bg-[rgba(255,255,255,0.75)] py-0 text-card-foreground shadow-[0_4px_16px_-4px_rgba(11,47,42,0.1),0_12px_32px_-8px_rgba(15,107,95,0.18)] backdrop-blur-[12px]",
         (step === "salon" || step === "recover") &&
           "max-h-[min(36rem,calc(100dvh-5.5rem))] sm:max-h-[min(38rem,calc(100dvh-5.5rem))] lg:max-h-[calc(100dvh-5.5rem)]"
       )}
@@ -572,7 +578,7 @@ export function ContinueWithMobileForm() {
 
       <CardContent
         className={cn(
-          "flex min-h-0 flex-1 flex-col !bg-[#F4F8F7]",
+          "flex min-h-0 flex-1 flex-col !bg-transparent",
           step === "salon" || step === "recover"
             ? "overflow-y-auto overscroll-contain px-4 py-3.5 sm:px-5 sm:py-4"
             : "px-6 py-6 sm:px-7 sm:py-7"
